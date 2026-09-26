@@ -1,0 +1,355 @@
+/* BASIC TEXT AND COLORS */
+/* 100vh means the full height of the browser window. */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    background-color: #f4f6f1;
+    color: #20392f;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 30px;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+a {
+    color: #20392f;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+small,
+.muted,
+.note {
+    color: #64736b;
+}
+
+.note,
+.eyebrow {
+    font-size: 13px;
+}
+
+/* TOP LABEL */
+.preview {
+    padding: 10px;
+    background-color: #e5eccf;
+    text-align: center;
+}
+
+/* SIDEBAR AND MAIN AREA: TWO GRID COLUMNS */
+.shell {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 230px 1fr;
+}
+
+/* Allows a wide table to scroll inside the main area. */
+.main-area {
+    min-width: 0;
+}
+
+aside {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #20392f;
+    color: white;
+}
+
+.brand {
+    display: block;
+    height: 80px;
+    overflow: hidden;
+}
+
+/* The original logo has empty space above and below it. */
+.brand img {
+    width: 190px;
+    margin-top: -55px;
+}
+
+nav {
+    margin-top: 20px;
+}
+
+nav a,
+nav span {
+    display: block;
+    margin-bottom: 8px;
+    padding: 12px;
+    color: white;
+    text-decoration: none;
+}
+
+nav .active {
+    background-color: #b6d961;
+    color: #20392f;
+}
+
+nav a:hover {
+    background-color: #45604e;
+    color: white;
+}
+
+.aside-end {
+    margin-top: auto;
+    padding-top: 40px;
+    font-size: 13px;
+}
+
+.aside-end a {
+    color: white;
+}
+
+.topbar,
+.heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.topbar {
+    padding: 20px;
+    background-color: white;
+    border-bottom: 1px solid #dde4dd;
+}
+
+.content {
+    padding: 25px;
+}
+
+.heading {
+    margin-bottom: 20px;
+}
+
+/* CARDS: FOUR COLUMNS ON THE DASHBOARD */
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.card {
+    padding: 20px;
+    background-color: white;
+    border: 1px solid #dde4dd;
+    border-radius: 6px;
+}
+
+.stat strong {
+    display: block;
+    margin: 10px 0;
+    font-size: 32px;
+}
+
+/* SCHEDULE TABLE */
+.table-wrap {
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid #dde4dd;
+}
+
+th {
+    background-color: #f4f6f1;
+}
+
+.tag,
+.pill {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: #e7f0dc;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+.pending {
+    background-color: #fff0d3;
+    color: #77561a;
+}
+
+/* LOGIN: TWO COLUMNS */
+.login-layout {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.login-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: #20392f;
+    color: white;
+    text-align: center;
+}
+
+.login-brand img {
+    width: 70%;
+    max-width: 280px;
+}
+
+.login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+/* FORM FIELDS */
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input,
+select,
+textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #bdcbbb;
+    border-radius: 5px;
+    background-color: white;
+    color: #20392f;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+}
+
+.checkbox {
+    width: auto;
+}
+
+.field {
+    margin-bottom: 18px;
+}
+
+.inline {
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+.form-grid,
+.home-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.summary {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #e7f0dc;
+}
+
+/* BUTTONS AND PAGE LINKS */
+.wide {
+    width: 100%;
+}
+
+.button,
+button {
+    display: inline-block;
+    padding: 12px 18px;
+    border: 1px solid #20392f;
+    border-radius: 5px;
+    background-color: #20392f;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    text-decoration: none;
+}
+
+.button:hover {
+    background-color: #45604e;
+    text-decoration: none;
+}
+
+.light {
+    background-color: white;
+    color: #20392f;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.preview-links {
+    margin-top: 25px;
+    border-top: 1px solid #dde4dd;
+}
+
+.preview-links a {
+    display: block;
+    margin-top: 12px;
+}
+
+.home {
+    flex-grow: 1;
+    margin: 0;
+    padding: 40px;
+}
+
+/* SMALL SCREENS: STACK THE COLUMNS */
+@media (max-width: 800px) {
+
+    .shell,
+    .login-layout,
+    .stats,
+    .form-grid,
+    .home-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar,
+    .heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .content,
+    .login-brand,
+    .login-panel {
+        padding: 20px;
+    }
+}
