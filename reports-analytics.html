@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reports & Analytics | Pikolbook</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="shell">
+        <aside>
+            <a class="brand" href="index.html">
+                <img src="img/logo.png" alt="Pikolbook preview">
+            </a>
+            <nav aria-label="Sidebar navigation">
+                <a href="admin-dashboard.html">Dashboard</a>
+                <a href="resources.html">Resources</a>
+                <a href="new-booking.html">Bookings &amp; schedule</a>
+                <a href="">Clients</a>
+                <a href="">Staff</a>
+                <a class="active" href="reports-analytics.html">Reports &amp; analytics</a> <br><br>
+                <a href="login.html">Logout</a>
+            </nav>
+            <div class="aside-end">
+                <a href="login.html">Back to login preview</a>
+            </div>
+        </aside>
+
+        <div class="main-area">
+            <header class="topbar">
+                <strong>PIKOLBOOK <small>/ COURT BOOKING SYSTEM</small></strong>
+                <span class="tag">Admin mode</span>
+                <span>Welcome back, &lt;name&gt;</span>
+            </header>
+
+            <main class="content report-page">
+                <div class="report-header">
+                    <h1 class="report-title">Reports &amp; Booking History</h1>
+                    <p class="report-subtitle">Periodic reporting per court/resource and per client.</p>
+                </div>
+
+                <div class="report-tabs" aria-label="Reporting tabs">
+                    <button class="report-tab active" type="button">Periodic Reporting</button>
+                    <button class="report-tab" type="button">Bookings per resource</button>
+                    <button class="report-tab" type="button">Bookings per client</button>
+                </div>
+
+                <section class="report-panel" aria-label="2026 reports">
+                    <div class="report-year">
+                        <div class="year-number">2026</div>
+                        <div class="report-toggle">⌃</div>
+                    </div>
+
+                    <div class="report-chart">
+                        <div class="chart-row">
+                            <div class="chart-label">Court 1</div>
+                            <div class="chart-track">text here</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Court 2</div>
+                            <div class="chart-track">text here</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Court 3</div>
+                            <div class="chart-track">text here</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Court 4</div>
+                            <div class="chart-track">text here</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="report-panel collapsed" aria-label="2025 reports">
+                    <div class="report-year">
+                        <div class="year-number">2025</div>
+                        <div class="report-toggle">⌄</div>
+                    </div>
+
+                    <div class="report-chart">
+                        <div class="chart-row">
+                            <div class="chart-label">Championship Indoor</div>
+                            <div class="chart-track"><span class="chart-bar level-2"></span></div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Outdoor Premier</div>
+                            <div class="chart-track"><span class="chart-bar level-3"></span></div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Training Court</div>
+                            <div class="chart-track"><span class="chart-bar level-1"></span></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+
+</html>
