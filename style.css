@@ -1,5 +1,6 @@
-/* BASIC TEXT AND COLORS */
-/* 100vh means the full height of the browser window. */
+/* ==========================================================================
+   BASIC TEXT, LAYOUT & COLORS
+   ========================================================================== */
 body {
     min-height: 100vh;
     display: flex;
@@ -52,14 +53,15 @@ small,
     text-align: center;
 }
 
-/* SIDEBAR AND MAIN AREA: TWO GRID COLUMNS */
+/* ==========================================================================
+   SHELL, SIDEBAR & NAVIGATION
+   ========================================================================== */
 .shell {
     flex-grow: 1;
     display: grid;
     grid-template-columns: 240px 1fr;
 }
 
-/* Allows a wide table to scroll inside the main area. */
 .main-area {
     min-width: 0;
 }
@@ -147,6 +149,9 @@ nav a:hover {
     color: white;
 }
 
+/* ==========================================================================
+   CONTENT LAYOUT & HEADINGS
+   ========================================================================== */
 .topbar,
 .heading {
     display: flex;
@@ -170,7 +175,15 @@ nav a:hover {
     margin-bottom: 20px;
 }
 
-/* CARDS: FOUR COLUMNS ON THE DASHBOARD */
+.home {
+    flex-grow: 1;
+    margin: 0;
+    padding: 40px;
+}
+
+/* ==========================================================================
+   CARDS & DASHBOARD STATS
+   ========================================================================== */
 .stats {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -191,7 +204,9 @@ nav a:hover {
     font-size: 32px;
 }
 
-/* SCHEDULE TABLE */
+/* ==========================================================================
+   TABLES & BADGES
+   ========================================================================== */
 .table-wrap {
     overflow: auto;
 }
@@ -226,7 +241,9 @@ th {
     color: #77561a;
 }
 
-/* LOGIN: TWO COLUMNS */
+/* ==========================================================================
+   LOGIN & FORMS
+   ========================================================================== */
 .login-layout {
     flex-grow: 1;
     display: grid;
@@ -262,7 +279,6 @@ th {
     margin: 0 auto;
 }
 
-/* FORM FIELDS */
 label {
     display: block;
     margin-bottom: 6px;
@@ -309,7 +325,9 @@ textarea {
     background-color: #e7f0dc;
 }
 
-/* BUTTONS AND PAGE LINKS */
+/* ==========================================================================
+   BUTTONS & ACTIONS
+   ========================================================================== */
 .wide {
     width: 100%;
 }
@@ -325,6 +343,7 @@ button {
     font-family: Arial, sans-serif;
     font-size: 15px;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .button:hover {
@@ -354,12 +373,55 @@ button {
     margin-top: 12px;
 }
 
-.home {
-    flex-grow: 1;
-    margin: 0;
-    padding: 40px;
+/* ==========================================================================
+   MODAL POP-UP DIALOG OVERLAY
+   ========================================================================== */
+dialog.modal-dialog {
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    max-width: 640px;
+    width: 92%;
+    background: transparent;
+    box-shadow: 0 20px 40px rgba(32, 57, 47, 0.3);
 }
 
+dialog.modal-dialog::backdrop {
+    background-color: rgba(32, 57, 47, 0.65);
+    backdrop-filter: blur(4px);
+}
+
+.modal-card {
+    margin: 0;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-close {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: #64736b;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.btn-close:hover {
+    background-color: #f4f6f1;
+    color: #20392f;
+}
+
+/* ==========================================================================
+   REPORTS & CHARTS
+   ========================================================================== */
 .report-page .content {
     padding: 28px 30px 30px;
 }
@@ -488,6 +550,9 @@ button {
     display: none;
 }
 
+/* ==========================================================================
+   RESOURCES & RESOURCE TABLES
+   ========================================================================== */
 .resource-heading {
     margin-bottom: 18px;
 }
@@ -649,7 +714,9 @@ button {
     color: #b0263c;
 }
 
-/* SMALL SCREENS: STACK THE COLUMNS */
+/* ==========================================================================
+   RESPONSIVE (MOBILE) STYLES
+   ========================================================================== */
 @media (max-width: 800px) {
 
     .shell,
