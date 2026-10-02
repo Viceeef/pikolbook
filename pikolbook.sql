@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+    /*ENGINE=InnoDB - default, transaction-safe storage engine for MySQL that provides ACID 
+    compliance, row-level locking, and foreign key support.*/
 
 CREATE TABLE IF NOT EXISTS clients (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -71,6 +73,51 @@ CREATE TABLE IF NOT EXISTS bookings (
   FOREIGN KEY (payment_updated_by) REFERENCES users(id),
   INDEX court_schedule (court_id, booking_date, status)
 ) ENGINE=InnoDB;
+
+-- ANALYTICS VIEWS
+-- 1. Periodic Reporting (Yearly & Monthly Revenue/Booking Summary)
+CREATE OR REPLACE VIEW view_periodic_reporting AS
+SELECT 
+    YEAR(booking_date) AS report_year,
+    MONTH(booking_date) AS report_month,
+    MONTHNAME(booking_date) AS month_name,
+    COUNT(id) AS total_bookings,
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_bookings,
+    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_bookings,
+    SUM(CASE WHEN payment_status = 'paid' THEN amount_paid ELSE 0 END) AS total_revenue
+FROM bookings
+GROUP BY YEAR(booking_date), MONTH(booking_date);
+
+-- 2. Resource Analytics (Bookings & Revenue per Court per Year & Month)
+CREATE OR REPLACE VIEW view_analytics_by_resource AS
+SELECT 
+    YEAR(b.booking_date) AS report_year,
+    MONTH(b.booking_date) AS report_month,
+    MONTHNAME(b.booking_date) AS month_name,
+    c.id AS court_id,
+    c.name AS court_name,
+    COUNT(b.id) AS total_bookings,
+    SUM(CASE WHEN b.payment_status = 'paid' THEN b.amount_paid ELSE 0 END) AS total_revenue
+FROM bookings b
+JOIN courts c ON b.court_id = c.id
+WHERE b.status != 'cancelled'
+GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), c.id;
+
+-- 3. Client Analytics (Bookings & Expenditure per Client per Year & Month)
+CREATE OR REPLACE VIEW view_analytics_by_client AS
+SELECT 
+    YEAR(b.booking_date) AS report_year,
+    MONTH(b.booking_date) AS report_month,
+    MONTHNAME(b.booking_date) AS month_name,
+    cl.id AS client_id,
+    cl.full_name AS client_name,
+    cl.phone AS client_phone,
+    COUNT(b.id) AS total_bookings,
+    SUM(b.amount_paid) AS total_spent
+FROM bookings b
+JOIN clients cl ON b.client_id = cl.id
+WHERE b.status != 'cancelled'
+GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), cl.id;
 
 -- PHP will later validate times, amounts, permissions and booking conflicts.
 -- Passwords must be generated with PHP password_hash(), never plain text.
