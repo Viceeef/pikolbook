@@ -1,0 +1,289 @@
+HISTORICAL WEEK 1 NOTES
+
+These are your original Week 1 notes and planning documents. Their old
+preview status, paths and tentative permissions have been superseded by
+the current PHP application and README.txt. Kept together here so your
+Week 1 reference material is included without extra folders.
+
+
+README.TXT
+
+PIKOLBOOK - WEEK 1
+
+Files
+  index.html             Home / preview links
+  login.html             Login design
+  admin-dashboard.html   Admin design
+  staff-dashboard.html   Staff design
+  new-booking.html       Booking form design
+  style.css              All styles
+  pikolbook.sql          Starter database
+  img/                   Your two logos
+
+HTML and CSS are in the same folder. Later PHP and JS files will also
+be in this folder, with separate files for each page or action.
+
+OPEN THE WEBSITE
+1. Copy the pikolbook folder into C:\xampp\htdocs\.
+2. Start Apache in XAMPP.
+3. Open http://localhost/pikolbook/.
+   If Apache uses port 8080, open http://localhost:8080/pikolbook/.
+
+CREATE THE DATABASE
+1. Start Apache and MySQL in XAMPP.
+2. Open http://localhost/phpmyadmin/.
+3. Click Import at the top.
+4. Choose pikolbook.sql from this folder.
+5. Click Go (or Import).
+6. Look for pikolbook_db on the left. Refresh if needed.
+
+You should see five empty tables:
+  users        Admin and Staff accounts
+  clients      Client details
+  courts       Court details and opening hours
+  court_blocks Maintenance / unavailable times
+  bookings     Reservations and offline payment details
+
+The SQL creates the database itself. You do not need a database/ folder.
+You can also open pikolbook.sql in a text editor, copy all the code,
+and run it in phpMyAdmin's SQL tab.
+
+No sample login is included. Password hashes will be created through PHP
+when we add working accounts. Do not enter plain passwords in the table.
+The SQL does not delete existing records or change existing table layouts.
+Use it for a new pikolbook_db; it is not a migration for a different schema.
+
+WHAT WORKS NOW
+Links between the preview pages work. Forms are disabled. The numbers,
+names and PHP 300 price are examples. Importing the SQL does not connect
+the pages to the database. No real bookings or payments happen yet.
+
+TEAM
+Angelique So: CSS, colors, spacing and design.
+Aldrei Paz: SQL, database connection, login and backend validation.
+Seth Somoza: HTML pages, JS when needed, backend integration and general coding.
+These are assignments; record each person's actual work as you go.
+
+WEEKS
+1. Requirements and design (current).
+2. Complete the frontend pages and simple interactions.
+3. Connect PHP and MySQL, add login and CRUD, then test.
+4. Prepare the presentation and defense.
+We wait for your command before moving to the next week.
+The starter SQL is included now because you requested it.
+
+SCOPE
+Two login roles: Admin and Staff. Clients are records, not login users.
+Manage courts, clients, staff and bookings. Search available schedules,
+reschedule/cancel bookings and view date/court/client reports.
+Payment is outside the website; staff only record its status and details.
+Basic HTML, CSS, PHP, MySQL and a little JS. No APIs or frameworks.
+
+LATER RULES
+PHP will check required fields, booking overlaps and unavailable courts.
+Cancelled bookings free the slot. Back-to-back bookings are allowed.
+Payment status is separate from booking status; cancellation does not
+perform a refund. Keep referenced history instead of deleting it.
+Use hashed passwords, prepared SQL statements and session role checks.
+
+TO CONFIRM
+The specification lets Staff manage staff records, but the Staff wireframe
+has no Staff page. Confirm that permission before backend development.
+Also confirm court prices, opening hours and the milestone dates, since
+the specification has date typos. Keep using your original wireframe PDF.
+
+CHECKS
+Local links and image paths have been checked. Browser appearance and
+SQL execution have not been tested here. Review the pages in your browser
+and run the import in XAMPP; send any error text if something fails.
+
+CSS
+style.css now uses plain colors, class selectors, margins, padding,
+borders, simple Grid columns and Flexbox from the supplied lessons.
+One media query stacks the columns on smaller screens.
+Each property is on its own line, with comments for each section.
+The top label now only says Week 1 preview.
+
+FULL WINDOW LAYOUT
+The sidebar and login panels now fill the available browser height.
+The login content is centered, and the home page uses the full width.
+Only style.css changed. No database import is needed for this update.
+100vh means the browser height; flex-grow fills the remaining space
+below the Week 1 label. Small screens still stack the columns.
+
+
+DOCS/REQUIREMENTS.MD
+
+# Week 1 requirements
+
+## Purpose and users
+
+Pikolbook helps venue personnel manage pickleball courts, client records and reservations. The resource is a court. There are two system roles: **Admin** and **Staff**. Clients are booking records, not a third login role in the supplied design. Staff enter bookings on clients' behalf.
+
+The website records offline payment information. It does not collect money or card details, redirect to a payment service, or call payment APIs.
+
+## Required modules
+
+| Module | Planned behavior | Completion evidence in Week 3 |
+|---|---|---|
+| Accounts | Sign in/out, protected pages, staff account creation and own-profile update | Invalid login fails; role checks prevent unauthorized actions |
+| Courts/resources | Add, view, edit and remove unused courts; set availability and maintenance blocks | Unavailable courts cannot be booked |
+| Bookings | Search, create, view, reschedule, cancel and remove eligible records; list and calendar views | Overlapping bookings rejected on create and edit |
+| Clients | Add, search, view, edit and remove unused client records | Required fields validated; referenced clients retained |
+| Staff records | Add, view, edit and deactivate staff accounts; remove unused accounts | Unique email and safe account permissions enforced |
+| Offline payment records | Set amount, status, method, reference, paid date and notes | Payment change persists; no online payment transaction occurs |
+| Reports/history | Date range, bookings per court and bookings per client | Correct filtered results, including clearly marked cancellations |
+
+CRUD means Create, Read, Update and Delete. For referenced records, deactivate/archive instead of deleting history. Hard deletion is planned only for unused courts/clients/staff and eligible mistaken bookings; the exact booking deletion rule needs instructor confirmation. Reports read underlying CRUD records and do not need a separate editable reports table.
+
+## Proposed permissions
+
+| Action | Admin | Staff |
+|---|---|---|
+| Login, logout and edit own profile | Yes | Yes |
+| View courts and availability | Yes | Yes |
+| Create/edit/remove courts and set blocked times | Yes | No, based on wireframes |
+| Create/edit/cancel bookings and record offline payment | Yes | Yes |
+| Manage client records | Yes | Yes |
+| Manage other staff records | Yes | Clarify before backend work |
+| View date/court/client booking reports | Yes | Yes |
+| Assign Admin role | Yes | No |
+
+The specification explicitly lists staff-record CRUD under Staff, but the supplied Staff wireframe omits staff management. This is unresolved: confirm with the instructor before implementing access rules. Staff must never be able to grant themselves Admin access.
+
+## Proposed booking rules
+
+1. One booking reserves one court for one client on one day. Recurring and overnight reservations are outside the initial scope.
+2. Client, court, date, start and end times are required. End must be after start. New bookings cannot start in the past. Opening hours remain a venue setting to confirm.
+3. An active booking conflicts when `existing_start < requested_end` and `existing_end > requested_start` on the same court and date. Adjacent bookings are allowed. Ignore the current booking when editing it.
+4. Cancelled bookings release their time. Maintenance blocks and inactive courts prevent booking.
+5. Enforce the conflict check in PHP. Serialize writes for the same court in a database transaction in Week 3 so two simultaneous submissions cannot both reserve the same time.
+6. Proposed booking statuses: Confirmed, Completed and Cancelled. Payment status is independent: Unpaid, Paid or Refunded. Cancelling a paid booking does not automatically issue or record a refund.
+7. One payment record per booking keeps the initial project small. Partial payments, installments and automatic refunds are outside scope. A reference and note can record a refund handled outside the website.
+8. The example PHP 300 rate, client names, counts and dates in the mockups are illustrative, not real venue information.
+
+## Interface design
+
+Use the supplied green logos, dark green sidebar, pale neutral background and clear tables. Use Arial/system fonts locally, without external services. Use labels on form fields, readable status words and visible keyboard focus. Adapt to smaller screens; wide tables may scroll horizontally.
+
+The four current mockups show login, Admin dashboard, Staff dashboard and booking creation. The original wireframe PDF supplies resource forms, list/calendar bookings, clients, staff, reports and profile layouts for Week 2.
+
+Two suggested design simplifications are explicit: “Remember me” becomes “Remember email” (no persistent login token), and “Forgot Password?” becomes contact-admin help (no email API). If password reset is required, implement an admin-assisted local reset in Week 3. Never store passwords in cookies.
+
+## Backend approach for Week 3
+
+Use plain PHP pages, small shared includes, mysqli prepared statements, GET for searching and POST for changes. Use PHP sessions with session ID regeneration after login, password_hash/password_verify, server-side role checks, CSRF tokens for changes, and htmlspecialchars for output. Validate every form again in PHP. No MVC framework, ORM, package manager, build pipeline or external API is required.
+
+## Final acceptance checklist (not implemented in Week 1)
+
+- [ ] Admin and Staff logins work; logged-out visitors cannot open protected pages.
+- [ ] Record CRUD works and foreign-key history is preserved.
+- [ ] Valid bookings save; conflicts, blocked times and invalid dates fail clearly.
+- [ ] Editing, cancellation, back-to-back slots and simultaneous requests behave correctly.
+- [ ] Offline payment changes save independently of booking status.
+- [ ] Filters and date/court/client reports match stored records.
+- [ ] Logout clears access; passwords are hashed; submitted SQL-like text is harmless.
+- [ ] Forms, navigation and tables remain usable on mobile and desktop.
+
+## Decisions to confirm before relevant milestones
+
+- Instructor-approved calendar dates (the source dates are inconsistent).
+- Staff-record CRUD permissions versus the Staff wireframe.
+- Staff self-registration: proposed registration creates Staff only and requires Admin activation; confirm whether admin-created accounts alone meet the requirement.
+- Real court names, hourly prices, opening hours and minimum booking duration.
+- Whether archive/cancellation meets the instructor's delete criterion for historical bookings.
+
+
+DOCS/DATABASE-PLAN.MD
+
+# Proposed database — design only
+
+Database name: `pikolbook_db`. Target: the MySQL-compatible database supplied with XAMPP, using InnoDB and utf8mb4. The schema is planned here for review; no database is required for the first checking.
+
+| Table | Proposed fields | Purpose |
+|---|---|---|
+| users | id, full_name, email (unique), password_hash, role, phone, is_active, created_at | Admin and Staff accounts; role restricted to admin/staff |
+| clients | id, full_name, email (optional), phone, is_active, created_at | Customers for whom staff make bookings |
+| courts | id, name (unique), description, hourly_rate, opening_time, closing_time, is_active | Court resource details |
+| court_blocks | id, court_id, start_at, end_at, reason | Maintenance and other unavailable periods |
+| bookings | id, court_id, client_id, created_by, booking_date, start_time, end_time, status, total_amount, notes, created_at, updated_at | Reservations and their historical price |
+| booking_payments | id, booking_id (unique), status, amount_paid, method, reference, paid_at, notes, updated_by, updated_at | One simple offline-payment record per booking |
+
+IDs use integer auto-increment primary keys. Foreign keys link court_blocks to courts; bookings to courts, clients and the creating user; booking_payments to bookings and the updating user. Use restrictive deletion for referenced history. Use DECIMAL(10,2) for money, DATE/TIME for the booking schedule, and VARCHAR(255) for password hashes. Staff profile data lives in users; do not create a duplicate staff login table.
+
+The application records times in Asia/Manila consistently. Add a booking index on court_id, booking_date and status for schedule checks. Availability is derived from court hours, blocks and active bookings; do not store a misleading single “available now” field.
+
+Payment fields describe a manual record, not a transaction processor. A cancelled paid booking remains paid until staff record the result of an offline refund. No card number, CVV, API key or gateway token is stored.
+
+## XAMPP database steps for Week 3
+
+These steps are a future checklist. The exact runnable SQL will be delivered when Week 3 is authorized.
+
+1. Start Apache and MySQL in XAMPP Control Panel.
+2. Visit http://localhost/phpmyadmin/.
+3. Open the SQL tab and run the supplied `database/pikolbook.sql`, or use Import to select that file. The file will create `pikolbook_db` and its tables.
+4. Set local credentials in `config/database.php`: typically host `localhost`, user `root`, empty password for an unmodified local XAMPP installation, database `pikolbook_db`. Use your actual password if configured.
+5. Create the first Admin through a one-time local setup process that hashes the password in PHP. Disable that setup after use; do not distribute a known working admin password.
+6. Check login, sample records, booking validation, CRUD and report results through http://localhost/pikolbook/.
+
+Do not add database setup or functioning login to the Week 1 submission. No production hosting or external service is required.
+
+
+DOCS/TEAM-AND-MILESTONES.MD
+
+# Team plan and milestones
+
+Assignments below describe planned responsibility, not fabricated completed contributions. Each member should review, adapt and explain their own work.
+
+| Member | Responsibility | Main planned files |
+|---|---|---|
+| Angelique So | Design, colors, spacing, responsiveness and visual review | assets/css/style.css; assets/css/forms.css; assets/images/ |
+| Aldrei Paz | Database, authentication, PHP validation and CRUD handlers | database/pikolbook.sql; config/database.php; includes/auth.php; actions/ |
+| Seth Somoza | HTML pages, small JS interactions, shared layout, backend integration and overall coding | index.php; dashboard.php; resources.php; bookings.php; clients.php; staff.php; reports.php; profile.php; includes/header.php; includes/sidebar.php; includes/footer.php; assets/js/main.js |
+
+## Milestones
+
+| Week | Scope | Checking materials | Progress gate |
+|---|---|---|---|
+| 1 | Requirement analysis and design | Requirements, supplied wireframes, visual mockups, database plan, assignments | Current package; team review remains |
+| 2 | Frontend development | Complete HTML/CSS layouts, responsive pages, small JS interactions; sample data only | Start only on user's command |
+| 3 | Backend, integration and testing | XAMPP/MySQL setup, SQL, PHP login, roles, CRUD, booking conflict prevention and reports | Start only on user's command |
+| 4 | Presentation and defense | Demo script, screenshots, test results, role explanations and final submission | Start only on user's command |
+
+Week 1 is September 21–26 in the specification. Week 2 says “September 28 to May 3,” Week 3 says “September 5 to 9,” and Week 4 says “September 12 to 16.” Keep the sequence and confirm actual deadlines with the instructor.
+
+## Simple project-management setup
+
+Use this Markdown board as the initial project tool. Edit the status column as work moves from To do → In progress → Review → Done. Store the shared project folder in the team's chosen shared drive or repository. Do not overwrite another member's files without coordinating.
+
+| Task | Assignee | Week | Status |
+|---|---|---|---|
+| Review branding and four visual mockups | Angelique | 1 | To do |
+| Review tables, relationships and required fields | Aldrei | 1 | To do |
+| Reconcile wireframes, scope and planned files | Seth | 1 | To do |
+| Confirm requirements conflicts with instructor | All | 1 | To do |
+| Agree final page styling and responsive behavior | Angelique | 2 | To do |
+| Build all HTML pages and shared navigation | Seth | 2 | To do |
+| Review frontend fields for backend readiness | Aldrei | 2 | To do |
+| Add form toggles, simple filters and calendar view | Seth | 2 | To do |
+| Provide SQL, database connection and authentication | Aldrei | 3 | To do |
+| Add CRUD handlers, role checks and booking rules | Aldrei + Seth | 3 | To do |
+| Integrate pages with database and reports | Seth | 3 | To do |
+| Check styling, errors and responsiveness | Angelique | 3 | To do |
+| Run functional tests and prepare demonstration | All | 3–4 | To do |
+
+## Planned separation of files
+
+The paths above are the future application layout. They are intentionally not filled with working backend code in Week 1. Keep database credentials in one configuration file. Share header/sidebar/footer with PHP includes after integration; do not duplicate backend logic across screens. Use readable filenames such as actions/save_booking.php, actions/cancel_booking.php, actions/save_client.php and actions/save_resource.php.
+
+Seth integrates reviewed contributions. Angelique reviews the resulting appearance. Aldrei reviews database access and validation. Keep a brief actual-contribution log for the peer rating, including date, member, files changed and work completed.
+
+## Week 1 review checklist
+
+- [ ] Open all four mockups and compare with supplied wireframes.
+- [ ] Agree that clients are records and Admin/Staff are the two login roles.
+- [ ] Confirm offline payment recording only.
+- [ ] Review pending decisions in requirements.md.
+- [ ] Assign each task and record actual contributions.
+- [ ] Request Week 2 only when the team is ready.
+

@@ -1,5 +1,5 @@
 -- Pikolbook starter database for XAMPP.
--- Import this file in phpMyAdmin. It creates empty tables, not working logins.
+-- Import this file in phpMyAdmin, then open setup.php to create working accounts.
 -- No existing tables or records are deleted.
 
 CREATE DATABASE IF NOT EXISTS pikolbook_db
@@ -119,6 +119,26 @@ JOIN clients cl ON b.client_id = cl.id
 WHERE b.status != 'cancelled'
 GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), cl.id;
 
--- PHP will later validate times, amounts, permissions and booking conflicts.
--- Passwords must be generated with PHP password_hash(), never plain text.
--- Payment information is recorded manually. No online payment is processed.
+
+-- COURTS
+-- Add the four starting courts when missing.
+INSERT INTO courts (name, description, hourly_rate, opening_time, closing_time)
+SELECT 'Court 1', 'Pickleball court', 300.00, '09:00:00', '00:00:00'
+WHERE NOT EXISTS (SELECT 1 FROM courts WHERE name = 'Court 1');
+
+INSERT INTO courts (name, description, hourly_rate, opening_time, closing_time)
+SELECT 'Court 2', 'Pickleball court', 300.00, '09:00:00', '00:00:00'
+WHERE NOT EXISTS (SELECT 1 FROM courts WHERE name = 'Court 2');
+
+INSERT INTO courts (name, description, hourly_rate, opening_time, closing_time)
+SELECT 'Court 3', 'Pickleball court', 300.00, '09:00:00', '00:00:00'
+WHERE NOT EXISTS (SELECT 1 FROM courts WHERE name = 'Court 3');
+
+INSERT INTO courts (name, description, hourly_rate, opening_time, closing_time)
+SELECT 'Court 4', 'Pickleball court', 300.00, '09:00:00', '00:00:00'
+WHERE NOT EXISTS (SELECT 1 FROM courts WHERE name = 'Court 4');
+
+-- Apply the confirmed settings to the four named courts only.
+-- Existing bookings keep their original times and recorded amounts.
+UPDATE courts SET hourly_rate = 300.00, opening_time = '09:00:00', closing_time = '00:00:00'
+WHERE name IN ('Court 1', 'Court 2', 'Court 3', 'Court 4');

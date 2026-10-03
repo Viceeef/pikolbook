@@ -1,0 +1,214 @@
+PIKOLBOOK FILE GUIDE - SIMPLE CODE DEFENSE NOTES
+
+We use 12 PHP files. Each page contains its own form processing and HTML.
+The other three PHP files share settings, common functions and layout.
+The code uses ordinary PHP and mysqli; there is no framework or build step.
+
+EACH PHP FILE
+
+index.php
+  The site's first page. Shows the email/password login form, checks the
+  account in MySQL and verifies the password with password_verify().
+  Successful login creates a PHP session and opens Dashboard. If the user
+  is already logged in, it goes straight to Dashboard. The sidebar's POST
+  logout form also comes here and clears the session.
+
+setup.php
+  Used only for the first installation. Creates Admin, MWF Staff and TTHS
+  accounts with password_hash(). Refuses to overwrite existing accounts.
+  Makes sure Court 1 to Court 4 exist. It is not public self-registration.
+
+config.php
+  Holds the database host, port, name, username and password, Manila time
+  zone and merchant QR image path. It connects to MySQL using mysqli.
+  It also contains query(), rows() and one(), which run prepared SQL.
+  query() runs a statement; rows() reads several records; one() reads one.
+  This is the only place to edit database connection settings.
+
+functions.php
+  Common PHP helpers used by the pages: login/role checks, form tokens,
+  safe text output, input validation, dates, prices, time labels and booking
+  availability. It also starts/ends transactions and the shared write lock.
+  Keeping these here prevents every page from repeating the same checks.
+
+layout.php
+  Shared HTML in three ordinary PHP functions:
+    page_header()   Outputs the sidebar, menu, top bar and status messages.
+    page_footer()   Closes the layout and adds the delete confirmation popup.
+    booking_modal() Outputs the booking popup used on Dashboard and Bookings.
+  The sidebar includes Staff management only for Admin and Edit profile
+  for Staff. Server checks still enforce the permissions separately.
+  The shared booking popup avoids maintaining two different booking forms.
+
+dashboard.php
+  Reads current counts and today's schedule from the database. Displays
+  overview cards and the quick schedule. Calls booking_modal() for New
+  booking. That form submits to bookings.php, which does the saving.
+
+resources.php
+  Lists courts and their availability. On POST it checks that the user is
+  Admin, then creates/edits/deletes a court or changes maintenance.
+  Its HTML includes the Admin resource popup. Staff gets a view-only page.
+  Referenced courts are archived; unused courts can be removed.
+
+bookings.php
+  The main booking page and all booking form processing.
+  GET displays records, filters and the New/Edit booking popup.
+  POST validates and creates/edits/cancels/deletes bookings. It also records
+  payment details. New clients are inserted here only with a valid booking.
+  The booking and client are saved together inside one transaction.
+  Admin can change the schedule/duration; Staff can edit payment details.
+  Deleting a booking cancels it while preserving history.
+
+clients.php
+  Lists and searches clients. Contains the edit popup and the POST code
+  to edit or delete a client. It rejects creating standalone clients.
+  Referenced clients are archived rather than removed from history.
+
+staff.php
+  Admin-only Staff directory, create/edit popup and POST form processing.
+  Creates accounts with hashed passwords, updates Staff data/passwords and
+  removes unused accounts or deactivates referenced accounts.
+  Staff cannot access the page or submit changes to it.
+
+reports.php
+  Reads booking records and calculates reports for the selected date range.
+  Groups period totals under expandable years, listing all twelve months.
+  Also counts bookings by court and client, including cancellations.
+  Received-payment totals exclude unpaid/refunded records. Print is handled
+  by a small JavaScript helper and the print rules in style.css.
+
+profile.php
+  Shows and updates the logged-in user's own name, email, phone and optional
+  new password. Requires the current password before saving. Uses the user
+  ID from the PHP session, so a submitted ID cannot change another account.
+
+OTHER APPLICATION FILES
+
+style.css
+  All appearance: green colors, sidebar, forms, tables, popups, responsive
+  layouts and print styles. It also aligns the filter buttons with inputs
+  and keeps selected/unselected sidebar text the same size and weight.
+
+script.js
+  Small browser interactions: open/close popups, confirm deletions, search
+  table rows and existing clients, switch new/existing client fields,
+  preview booking duration/end time/price and print reports.
+  It does not store accounts/bookings in browser storage. PHP saves to MySQL.
+  Browser validation helps the user; PHP repeats the important checks.
+
+pikolbook.sql
+  Creates the database, five tables, analytics views and four starting courts.
+  Tables: users, clients, courts, court_blocks and bookings.
+  Passwords are generated in setup.php, not stored as plain text in SQL.
+  This update needs no new database columns: bookings already has start_time,
+  end_time and total_amount, which can represent longer reservations.
+
+img/logo.png
+  The original Pikolbook logo used in the sidebar.
+
+img/login_logo.png
+  The original logo displayed on the login screen.
+
+img/qrph.png (optional; not supplied)
+  The venue's real merchant payment QR image. Add it when available.
+
+REFERENCE FILES - NOT EXECUTED BY PHP
+
+README.txt
+  Installation, upgrade steps, account setup, settings and current rules.
+
+FILE-GUIDE.txt
+  This explanation of the current files, merges and code flow.
+
+Week-1-Notes.txt
+  The original Week 1 README and planning documents, kept as historical
+  context. Their preview status, old paths and tentative rules may differ
+  from the current application. Use the current README for actual behavior.
+
+Week-1-Wireframes.pdf
+  The original supplied page-layout reference.
+
+Week-1-Design-Reference.pdf
+  The original design/theme reference.
+
+WHAT WAS MERGED
+
+Old files                             Current file
+index.php + login.php + logout.php    index.php
+config.php + db.php                   config.php
+header.php + footer.php +
+  booking-modal.php                   layout.php
+resources.php + resource-save.php     resources.php
+clients.php + client-save.php         clients.php
+staff.php + staff-save.php            staff.php
+profile.php + profile-save.php        profile.php
+bookings.php + booking-save.php +
+  booking-action.php                  bookings.php
+
+We kept separate pages for separate tabs because their purposes are clear.
+Merging all tabs into one huge file would make the sections harder to find.
+We kept common helpers/layout separate because several pages reuse them.
+These files are part of the application's behavior, not extra mockup files.
+
+HOW A BOOKING WORKS - EXAMPLE TO EXPLAIN
+
+1. Staff opens the New booking popup on Dashboard or Bookings.
+2. The shared HTML form in layout.php collects client, court, date,
+   start time, duration and manually verified payment information.
+3. script.js previews the end time and price, e.g. 10 AM + 3 hours
+   ends at 1 PM and costs PHP 900 at PHP 300 per hour.
+4. The form submits POST to bookings.php.
+5. PHP checks the login, form token, required inputs, allowed duration,
+   payment and full time range. It checks availability again in MySQL.
+6. The write lock prevents another submission from checking/saving at the
+   same time. The transaction saves the new client and booking together.
+7. On success, PHP redirects and reloads the data from MySQL. On failure,
+   it rolls back changes, shows an error and reopens the form.
+
+DURATION AND OVERLAP RULES
+
+Duration is a whole number of hours, from 1 to the hours remaining before
+midnight. For example, 9 AM allows up to 15 hours; 11 PM allows one hour.
+End time = start time + duration. Total = hourly rate x duration.
+A stored end_time of 00:00:00 means midnight on the next day.
+
+Two ranges overlap when:
+  existing start < requested end AND existing end > requested start.
+
+Example: 10 AM to 1 PM blocks 11 AM to 12 PM and 9 AM to 11 AM.
+It allows 1 PM to 3 PM because the bookings only meet at their boundary.
+Cancelled bookings do not block a time range.
+
+WHAT THE MAIN HELPERS MEAN
+
+signed_in()         Finds the session's active user; redirects if logged out.
+admin_only()        Refuses a Staff request for an Admin action.
+check_post()        Requires a POST request with the correct form token.
+csrf_field()        Adds that form token to a form.
+e()                Escapes displayed values so text is not executed as HTML.
+text_input()       Checks required text and maximum length.
+email_input()      Checks email syntax.
+valid_date()       Checks that the date really exists.
+field()            Prints a labeled input so repeated fields stay consistent.
+fv()               Restores safe form values after a validation error.
+begin_write()      Obtains the write lock and starts a transaction.
+end_write()        Commits or rolls back, then releases the lock.
+available()        Checks the entire requested range, blocks and existing bookings.
+booking_end()      Turns date/time into the correct end, including midnight.
+booking_hours()    Calculates hours from a stored booking's start/end.
+slot_label()       Displays the actual stored start and end times.
+money()            Formats a price for display.
+notice()           Saves a message to display after a redirect.
+go()               Redirects the browser and stops the current request.
+fail_form()        Rolls back and returns to the form with an error message.
+
+DEFENSE READING ORDER
+1. Start with index.php and setup.php for accounts.
+2. Read config.php for the connection and prepared queries.
+3. Read functions.php for the repeated checks and booking rules.
+4. Read layout.php for shared HTML and the booking form.
+5. Read bookings.php: its POST processing is above its display section.
+6. Read resources.php, clients.php, staff.php and profile.php similarly.
+7. Read dashboard.php and reports.php for database-driven displays.
+8. Read script.js and style.css for interaction and appearance.
