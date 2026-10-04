@@ -38,19 +38,20 @@ function page_header($title, $page, $user)
             <?php endforeach; ?>
         </nav>
         <div class="aside-end">
+            <div class="aside-user">
+                <span class="tag"><?= e(ucfirst($user['role'])) ?></span>
+                <p>Welcome back,<strong><?= e($user['full_name']) ?></strong></p>
+            </div>
             <form action="index.php" method="post">
                 <?php csrf_field(); ?>
                 <input type="hidden" name="action" value="logout">
                 <button class="light">Log out</button>
             </form>
-            <p>9 AM – midnight<br>₱300 per hour</p>
         </div>
     </aside>
     <div class="main-area">
         <header class="topbar">
             <strong>PIKOLBOOK <small>/ COURT BOOKING SYSTEM</small></strong>
-            <span class="tag"><?= e(ucfirst($user['role'])) ?></span>
-            <span>Welcome back, <?= e($user['full_name']) ?></span>
         </header>
         <main class="content">
             <?php if (!empty($_SESSION['message'])): ?>

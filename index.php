@@ -48,7 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post">
             <?php csrf_field(); ?>
             <?php field('Email address', 'email', $_POST['email'] ?? '', 'email', true, 150); ?>
-            <?php field('Password', 'password', '', 'password', true, 72); ?>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" maxlength="72" required autocomplete="current-password">
+            </div>
             <button class="wide">Log in</button>
         </form>
     </div></section>

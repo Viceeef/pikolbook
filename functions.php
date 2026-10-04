@@ -226,7 +226,7 @@ function delete_button($file, $id, $message)
     csrf_field();
     echo '<input type="hidden" name="id" value="' .
         (int) $id .
-        '"><input type="hidden" name="action" value="delete"><button class="light">Delete</button></form>';
+        '"><input type="hidden" name="action" value="delete"><button class="light delete-button">Delete</button></form>';
 }
 function fail_form($error, $path, $id = 0)
 {
