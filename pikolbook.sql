@@ -1,5 +1,7 @@
 -- Pikolbook starter database for XAMPP.
--- Import this file in phpMyAdmin, then open setup.php to create working accounts.
+-- Import this file in phpMyAdmin. The three assigned accounts are ready immediately.
+-- Account password: phpadmin (stored below as a bcrypt hash).
+-- Reimporting resets these three assigned accounts to the specified credentials.
 -- No existing tables or records are deleted.
 
 CREATE DATABASE IF NOT EXISTS pikolbook_db
@@ -142,3 +144,34 @@ WHERE NOT EXISTS (SELECT 1 FROM courts WHERE name = 'Court 4');
 -- Existing bookings keep their original times and recorded amounts.
 UPDATE courts SET hourly_rate = 300.00, opening_time = '09:00:00', closing_time = '00:00:00'
 WHERE name IN ('Court 1', 'Court 2', 'Court 3', 'Court 4');
+
+-- ASSIGNED ACCOUNTS
+-- Rename the old starter accounts without changing their IDs or booking history.
+UPDATE users SET email = 'admin@pikolbook.com'
+WHERE email = 'admin@pikolbook.test' AND NOT EXISTS (
+  SELECT 1 FROM (SELECT email FROM users) AS assigned_users
+  WHERE email = 'admin@pikolbook.com'
+);
+
+UPDATE users SET email = 'mwf@pikolbook.com'
+WHERE email = 'mwf@pikolbook.test' AND NOT EXISTS (
+  SELECT 1 FROM (SELECT email FROM users) AS assigned_users
+  WHERE email = 'mwf@pikolbook.com'
+);
+
+UPDATE users SET email = 'tth@pikolbook.com'
+WHERE email = 'tths@pikolbook.test' AND NOT EXISTS (
+  SELECT 1 FROM (SELECT email FROM users) AS assigned_users
+  WHERE email = 'tth@pikolbook.com'
+);
+
+-- Add missing accounts, or update the existing assigned account credentials.
+INSERT INTO users (full_name, email, password_hash, role, is_active) VALUES
+('Administrator', 'admin@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'admin', 1),
+('MWF Staff', 'mwf@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1),
+('TTH Staff', 'tth@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1)
+ON DUPLICATE KEY UPDATE
+  full_name = VALUES(full_name),
+  password_hash = VALUES(password_hash),
+  role = VALUES(role),
+  is_active = VALUES(is_active);

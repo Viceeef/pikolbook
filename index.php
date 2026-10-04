@@ -32,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $error = 'Email or password is incorrect, or this account is inactive.';
 }
-$needs_setup = (int) one('SELECT COUNT(*) AS total FROM users')['total'] === 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,9 +45,6 @@ $needs_setup = (int) one('SELECT COUNT(*) AS total FROM users')['total'] === 0;
         <?php if (!empty($_SESSION['message'])): ?><p class="notice"><?= e(
     $_SESSION['message'],
 ) ?></p><?php unset($_SESSION['message']);endif; ?>
-        <?php if (
-            $needs_setup
-        ): ?><p class="notice"><a href="setup.php">First time? Create your Admin and Staff accounts.</a></p><?php endif; ?>
         <form method="post">
             <?php csrf_field(); ?>
             <?php field('Email address', 'email', $_POST['email'] ?? '', 'email', true, 150); ?>

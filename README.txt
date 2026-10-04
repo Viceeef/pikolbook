@@ -1,14 +1,16 @@
 PIKOLBOOK - WORKING PHP / MYSQL VERSION
 
 UPDATING YOUR WORKING COPY
-1. Keep your database. You do not need to import SQL or run setup again.
+1. Keep your database. Import the updated pikolbook.sql in phpMyAdmin.
+   It preserves bookings and clients, renames old starter accounts when
+   possible, and resets the three assigned accounts to password phpadmin.
 2. Rename C:\xampp\htdocs\pikolbook to pikolbook-old as a backup.
 3. Extract this ZIP and put its new pikolbook folder in C:\xampp\htdocs\.
    Replace the project folder; do not merge old PHP/HTML files into it.
 4. If you customized the database settings, enter the same host, port,
    database, username and password values at the top of the new config.php.
    Do not copy the entire old config.php; the new one also connects to MySQL.
-5. Open http://localhost/pikolbook/ and log in with your existing account.
+5. Open http://localhost/pikolbook/ and use one of the accounts listed below.
 6. Press Ctrl+F5 once so the browser loads the updated CSS and JavaScript.
 
 Your MySQL records are outside the project folder and are not deleted by
@@ -21,17 +23,19 @@ FIRST INSTALLATION ONLY (WINDOWS XAMPP)
 3. Open http://localhost/phpmyadmin/. Click Import, choose pikolbook.sql
    from this folder and click Go. The SQL creates pikolbook_db, the five
    original tables, analytics views and Court 1 through Court 4.
-4. Open http://localhost/pikolbook/setup.php.
-5. Choose an Admin email and three passwords (8 to 72 characters):
-     Admin: your chosen email (default admin@pikolbook.test)
-     MWF Staff: mwf@pikolbook.test
-     TTHS Staff: tths@pikolbook.test
-6. Log in at http://localhost/pikolbook/ with those credentials.
+4. Log in at http://localhost/pikolbook/ with one of these accounts:
+     Admin: admin@pikolbook.com
+     MWF Staff: mwf@pikolbook.com
+     TTH Staff: tth@pikolbook.com
+   Password for all three: phpadmin
 
+There is no sign-up or first-time setup page. The SQL file stores bcrypt
+password hashes; index.php checks them with password_verify(). Importing
+this SQL again resets these three assigned accounts to phpadmin.
+The database connection still uses XAMPP's root user with an empty password;
+phpadmin is the website account password, not the MySQL root password.
 Always open PHP through localhost, not by double-clicking a PHP file.
 If Apache uses port 8080, use http://localhost:8080/pikolbook/ instead.
-Setup will not overwrite existing accounts. The previous browser preview
-password is not automatically assigned to the real MySQL accounts.
 
 WHAT CHANGED IN THIS UPDATE
 - Start time and duration replace the fixed one-hour slot choice.
@@ -42,7 +46,7 @@ WHAT CHANGED IN THIS UPDATE
 - Staff can change payment details but cannot change time or duration.
 - Selected sidebar tabs keep the same font size and weight.
 - Filter / Clear / All dates / Print report match the input height.
-- 23 PHP files were merged into 12 without adding a framework.
+- 11 PHP files remain; the first-time setup page has been removed.
 - FILE-GUIDE.txt explains every remaining file and the merged files.
 
 SIMPLE FILE ORGANIZATION
@@ -86,7 +90,7 @@ edits/deletes clients and edits only their own profile.
 Both can view reports. New clients are added only while making a booking.
 Unused clients/courts/Staff may be deleted. Referenced ones are archived
 or deactivated. Cancel/reschedule future bookings before court maintenance.
-MWF/TTHS are account labels rather than weekday login restrictions.
+MWF/TTH are account labels rather than weekday login restrictions.
 Sessions expire after 30 minutes without activity.
 
 MERCHANT QRPH IMAGE

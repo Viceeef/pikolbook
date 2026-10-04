@@ -1,6 +1,6 @@
 PIKOLBOOK FILE GUIDE - SIMPLE CODE DEFENSE NOTES
 
-We use 12 PHP files. Each page contains its own form processing and HTML.
+We use 11 PHP files. Each page contains its own form processing and HTML.
 The other three PHP files share settings, common functions and layout.
 The code uses ordinary PHP and mysqli; there is no framework or build step.
 
@@ -12,11 +12,6 @@ index.php
   Successful login creates a PHP session and opens Dashboard. If the user
   is already logged in, it goes straight to Dashboard. The sidebar's POST
   logout form also comes here and clears the session.
-
-setup.php
-  Used only for the first installation. Creates Admin, MWF Staff and TTHS
-  accounts with password_hash(). Refuses to overwrite existing accounts.
-  Makes sure Court 1 to Court 4 exist. It is not public self-registration.
 
 config.php
   Holds the database host, port, name, username and password, Manila time
@@ -100,7 +95,9 @@ script.js
 pikolbook.sql
   Creates the database, five tables, analytics views and four starting courts.
   Tables: users, clients, courts, court_blocks and bookings.
-  Passwords are generated in setup.php, not stored as plain text in SQL.
+  Seeds admin@pikolbook.com, mwf@pikolbook.com and tth@pikolbook.com.
+  All use phpadmin, stored as a bcrypt hash rather than plain text.
+  Reimporting resets these assigned credentials while keeping booking history.
   This update needs no new database columns: bookings already has start_time,
   end_time and total_amount, which can represent longer reservations.
 
@@ -116,7 +113,7 @@ img/qrph.png (optional; not supplied)
 REFERENCE FILES - NOT EXECUTED BY PHP
 
 README.txt
-  Installation, upgrade steps, account setup, settings and current rules.
+  Installation, upgrade steps, assigned accounts, settings and current rules.
 
 FILE-GUIDE.txt
   This explanation of the current files, merges and code flow.
@@ -204,7 +201,7 @@ go()               Redirects the browser and stops the current request.
 fail_form()        Rolls back and returns to the form with an error message.
 
 DEFENSE READING ORDER
-1. Start with index.php and setup.php for accounts.
+1. Start with index.php and pikolbook.sql for accounts.
 2. Read config.php for the connection and prepared queries.
 3. Read functions.php for the repeated checks and booking rules.
 4. Read layout.php for shared HTML and the booking form.
