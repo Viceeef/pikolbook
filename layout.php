@@ -266,8 +266,6 @@ function booking_modal($page, $user)
             <img class="payment-qr" src="<?= e($payment_qr) ?>" alt="<?= e(
     $merchant_name,
 ) ?> merchant QRPH code">
-        <?php else: ?>
-            <p class="note">The merchant QRPH image is pending. Add the venue's real QR to img/qrph.png.</p>
         <?php endif; ?>
         <div class="actions">
             <button class="light" type="button" data-close="booking-dialog"><?= action_icon(

@@ -7,10 +7,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int) ($_POST['id'] ?? 0);
     try {
         begin_write();
-        if (!$id || !one('SELECT id FROM clients WHERE id=?', 'i', [$id])) {
+        $client = $id ? one('SELECT id,full_name FROM clients WHERE id=?', 'i', [$id]) : null;
+        if (!$client) {
             throw new Exception('Choose an existing client. New clients can only be added with a booking.');
         }
-        if (($_POST['action'] ?? '') === 'delete') {
+        $deleting = ($_POST['action'] ?? '') === 'delete';
+        if ($deleting) {
             if (one('SELECT id FROM bookings WHERE client_id=? LIMIT 1', 'i', [$id])) {
                 query('UPDATE clients SET is_active=0 WHERE id=?', 'i', [$id]);
             } else {
@@ -32,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
         end_write(true);
-        notice('Client updated or removed.');
+        notice($deleting ? 'Client removed: ' . $client['full_name'] : 'Client updated: ' . $name);
         go('clients.php');
     } catch (Exception $error) {
         fail_form($error, 'clients.php', $id);
