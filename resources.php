@@ -15,16 +15,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $deleting = ($_POST['action'] ?? '') === 'delete';
         $maintenance = ($_POST['maintenance'] ?? '0') === '1';
         $active = ($_POST['is_active'] ?? '1') === '1';
-        if ($id && ($deleting || $maintenance || !$active)) {
+        $maintenance_start = null;
+        $maintenance_end = null;
+        if (!$deleting && $maintenance) {
+            $start_value = $_POST['maintenance_start'] ?? '';
+            $end_value = $_POST['maintenance_end'] ?? '';
+            $start_date = DateTime::createFromFormat('!Y-m-d\TH:i', $start_value);
+            $end_date = DateTime::createFromFormat('!Y-m-d\TH:i', $end_value);
+            if (
+                !$start_date ||
+                !$end_date ||
+                $start_date->format('Y-m-d\TH:i') !== $start_value ||
+                $end_date->format('Y-m-d\TH:i') !== $end_value
+            ) {
+                throw new Exception('Choose valid start and end dates for maintenance.');
+            }
+            if ($end_date <= $start_date) {
+                throw new Exception('The maintenance end date and time must be after the start.');
+            }
+            $maintenance_start = $start_date->format('Y-m-d H:i:s');
+            $maintenance_end = $end_date->format('Y-m-d H:i:s');
+        }
+        if ($id && ($deleting || !$active || $maintenance)) {
             $future = rows(
                 "SELECT * FROM bookings WHERE court_id=? AND status='confirmed' AND booking_date>=DATE_SUB(?, INTERVAL 1 DAY)",
                 'is',
                 [$id, date('Y-m-d')],
             );
             foreach ($future as $booking) {
-                if (booking_end($booking) > date('Y-m-d H:i:s')) {
+                $booking_start = $booking['booking_date'] . ' ' . $booking['start_time'];
+                $overlaps_maintenance =
+                    $maintenance &&
+                    $booking_start < $maintenance_end &&
+                    booking_end($booking) > $maintenance_start;
+                if (
+                    booking_end($booking) > date('Y-m-d H:i:s') &&
+                    ($deleting || !$active || $overlaps_maintenance)
+                ) {
                     throw new Exception(
-                        'Cancel or reschedule upcoming bookings before archiving this court or setting maintenance.',
+                        $maintenance && $active
+                            ? 'Cancel or reschedule bookings that overlap the maintenance period.'
+                            : 'Cancel or reschedule upcoming bookings before archiving this court.',
                     );
                 }
             }
@@ -37,8 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 query('DELETE FROM courts WHERE id=?', 'i', [$id]);
             }
         } else {
+            if (
+                !isset($_POST['maintenance'], $_POST['is_active']) ||
+                !in_array($_POST['maintenance'], ['0', '1'], true) ||
+                !in_array($_POST['is_active'], ['0', '1'], true)
+            ) {
+                throw new Exception('Choose a master override and record status.');
+            }
             $name = text_input('name', 100);
-            $description = text_input('description', 1000, false);
+            $description = text_input('description', 1000);
             if ($id) {
                 query('UPDATE courts SET name=?,description=?,is_active=? WHERE id=?', 'ssii', [
                     $name,
@@ -61,9 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             if ($maintenance) {
                 query(
-                    "INSERT INTO court_blocks(court_id,start_at,end_at,reason) VALUES(?,?,'2099-12-31 23:59:59','Court maintenance (master override)')",
-                    'is',
-                    [$id, date('Y-m-d H:i:s')],
+                    "INSERT INTO court_blocks(court_id,start_at,end_at,reason) VALUES(?,?,?,'Court maintenance (master override)')",
+                    'iss',
+                    [$id, $maintenance_start, $maintenance_end],
                 );
             }
         }
@@ -109,7 +147,7 @@ page_header($title, $page, $user);
     $user['role'] === 'admin'
 ): ?><div class="row-actions"><a class="button light" href="resources.php?edit=<?= (int) $court[
     'id'
-] ?>">Edit / Master override</a><?php delete_button(
+] ?>"><?= action_icon('edit') ?>Edit</a><?php delete_button(
     'resources.php',
     $court['id'],
     'Delete this court? Referenced courts are archived. Cancel or reschedule upcoming bookings first.',
@@ -120,36 +158,64 @@ page_header($title, $page, $user);
 if ($user['role'] === 'admin'):
     $maintenance = $edit
         ? one(
-            "SELECT id FROM court_blocks WHERE court_id=? AND reason='Court maintenance (master override)'",
+            "SELECT * FROM court_blocks WHERE court_id=? AND reason='Court maintenance (master override)' ORDER BY id DESC LIMIT 1",
             'i',
             [$edit['id']],
         )
         : null; ?>
 <dialog id="resource-dialog" <?= $edit || isset($_GET['new']) ? 'data-auto-open' : '' ?>>
 <div class="heading"><h2><?= $edit
-    ? 'Edit resource / Master override'
+    ? 'Edit resource'
     : 'New resource' ?></h2><button type="button" class="light" data-close="resource-dialog">Close</button></div>
 <form method="post" action="resources.php"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) ($edit[
     'id'
 ] ?? 0) ?>">
+<?php if (!empty($_SESSION['form_error'])): ?><p class="error" role="alert"><?= e($_SESSION['form_error']) ?></p><?php unset($_SESSION['form_error']); endif; ?>
 <?php
+$maintenance_enabled = fv('maintenance', $maintenance ? 1 : 0) == 1;
 field('Court name', 'name', fv('name', $edit['name'] ?? ''));
-field('Description', 'description', fv('description', $edit['description'] ?? ''), 'text', false, 1000);
+field('Description', 'description', fv('description', $edit['description'] ?? ''), 'text', true, 1000);
 ?>
-<div class="field"><label for="maintenance">Master override</label><select name="maintenance" id="maintenance"><option value="0">Available</option><option value="1" <?= fv(
+<div class="field"><label for="maintenance">Master override<?= required_mark() ?></label><select name="maintenance" id="maintenance" required><option value="0">Available</option><option value="1" <?= fv(
     'maintenance',
     $maintenance ? 1 : 0,
 ) == 1
     ? 'selected'
     : '' ?>>Under maintenance</option></select></div>
-<div class="field"><label for="is_active">Record status</label><select name="is_active" id="is_active"><option value="1">Active</option><option value="0" <?= fv(
+<div id="maintenance-period" class="form-grid" <?= $maintenance_enabled ? '' : 'hidden' ?>>
+<?php
+$maintenance_start_value = fv(
+    'maintenance_start',
+    $maintenance ? date('Y-m-d\TH:i', strtotime($maintenance['start_at'])) : '',
+);
+$maintenance_end_value = fv(
+    'maintenance_end',
+    $maintenance ? date('Y-m-d\TH:i', strtotime($maintenance['end_at'])) : '',
+);
+?>
+    <div class="field">
+        <label for="maintenance_start">Maintenance starts<?= required_mark() ?></label>
+        <input type="datetime-local" id="maintenance_start" name="maintenance_start" value="<?= e(
+            $maintenance_start_value,
+        ) ?>" <?= $maintenance_enabled ? 'required' : '' ?>>
+    </div>
+    <div class="field">
+        <label for="maintenance_end">Maintenance ends<?= required_mark() ?></label>
+        <input type="datetime-local" id="maintenance_end" name="maintenance_end" value="<?= e(
+            $maintenance_end_value,
+        ) ?>" <?= $maintenance_enabled ? 'required' : '' ?>>
+    </div>
+</div>
+<div class="field"><label for="is_active">Record status<?= required_mark() ?></label><select name="is_active" id="is_active" required><option value="1">Active</option><option value="0" <?= fv(
     'is_active',
     $edit['is_active'] ?? 1,
 ) == 0
     ? 'selected'
     : '' ?>>Archived</option></select></div>
 <p>₱300 per hour · 9 AM to midnight</p><p class="note">Maintenance blocks new bookings. Cancel or reschedule affected bookings before blocking this court.</p>
-<div class="actions"><button type="button" class="light" data-close="resource-dialog">Cancel</button><button>Save resource</button></div></form></dialog>
+<div class="actions"><button type="button" class="light" data-close="resource-dialog"><?= action_icon(
+    'cancel',
+) ?>Cancel</button><button>Save resource</button></div></form></dialog>
 <?php
 endif;
 page_footer();

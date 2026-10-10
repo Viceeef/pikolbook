@@ -58,6 +58,10 @@ function page_header($title, $page, $user)
                 <p class="notice" role="status"><?= e($_SESSION['message']) ?></p>
                 <?php unset($_SESSION['message']); ?>
             <?php endif; ?>
+            <?php if (!empty($_SESSION['error_message'])): ?>
+                <p class="error error-notice" role="alert"><?= e($_SESSION['error_message']) ?></p>
+                <?php unset($_SESSION['error_message']); ?>
+            <?php endif; ?>
 <?php
 }
 function page_footer()
@@ -112,14 +116,19 @@ function booking_modal($page, $user)
         <?php csrf_field(); ?>
         <input type="hidden" name="id" value="<?= (int) ($booking['id'] ?? 0) ?>">
         <input type="hidden" name="return_page" value="<?= e($page) ?>">
+        <p id="booking-validation-error" class="error validation-error" role="alert" hidden></p>
+        <?php if (!empty($_SESSION['form_error'])): ?>
+            <p class="error" role="alert"><?= e($_SESSION['form_error']) ?></p>
+            <?php unset($_SESSION['form_error']); ?>
+        <?php endif; ?>
         <?php if ($booking): ?>
             <p>Client: <strong><?= e($booking['client_name']) ?></strong> · <?= e(
     ucfirst($booking['status']),
 ) ?></p>
         <?php else: ?>
             <div class="field">
-                <label for="client_mode">Client type</label>
-                <select id="client_mode" name="client_mode">
+                <label for="client_mode">Client type<?= required_mark() ?></label>
+                <select id="client_mode" name="client_mode" required>
                     <option value="existing">Existing client</option>
                     <option value="new" <?= fv('client_mode') === 'new'
                         ? 'selected'
@@ -127,9 +136,9 @@ function booking_modal($page, $user)
                 </select>
             </div>
             <div id="existing-client-fields">
-                <div class="field"><label for="client-search">Search client name</label><input id="client-search" type="search" placeholder="Type a name"></div>
+                <div class="field"><label for="client-search">Search client name</label><input id="client-search" type="search" placeholder="Type a name" autocomplete="off"><ul id="client-search-results" class="client-search-results" aria-live="polite" hidden></ul></div>
                 <div class="field">
-                    <label for="client_id">Select client</label>
+                    <label for="client_id">Select client<?= required_mark() ?></label>
                     <select id="client_id" name="client_id" required>
                         <option value="">Choose a client</option>
                         <?php foreach ($client_list as $client): ?>
@@ -142,15 +151,15 @@ function booking_modal($page, $user)
             </div>
             <div id="new-client-fields" hidden>
                 <?php
-                field('Full name', 'full_name', fv('full_name'), 'text', false);
-                field('Phone', 'phone', fv('phone'), 'tel', false, 30);
-                field('Email (optional)', 'email', fv('email'), 'email', false, 150);
+                field('Full name', 'full_name', fv('full_name'));
+                field('Phone', 'phone', fv('phone'), 'tel', true, 30);
+                field('Email', 'email', fv('email'), 'email', true, 150);
                 ?>
             </div>
         <?php endif; ?>
         <div class="form-grid">
             <div class="field">
-                <label for="court_id">Court</label>
+                <label for="court_id">Court<?= required_mark() ?></label>
                 <select id="court_id" name="court_id" required <?= $payment_only ? 'disabled' : '' ?>>
                     <?php foreach ($court_list as $court): ?>
                         <option value="<?= (int) $court['id'] ?>" data-rate="<?= e(
@@ -162,14 +171,14 @@ function booking_modal($page, $user)
                 </select>
             </div>
             <div class="field">
-                <label for="date">Booking date</label>
+                <label for="date">Booking date<?= required_mark() ?></label>
                 <input type="date" id="date" name="date" value="<?= e(
                     $date,
                 ) ?>" required <?= $payment_only ? 'readonly' : '' ?>>
             </div>
             <div class="field">
-                <label for="hour">Start time</label>
-                <select id="hour" name="hour" <?= $payment_only ? 'disabled' : '' ?>>
+                <label for="hour">Start time<?= required_mark() ?></label>
+                <select id="hour" name="hour" required <?= $payment_only ? 'disabled' : '' ?>>
                     <?php for ($start = 9; $start <= 23; $start++): ?>
                         <option value="<?= $start ?>" <?= (int) $hour === $start ? 'selected' : '' ?>><?= e(
     hour_label($start),
@@ -178,8 +187,8 @@ function booking_modal($page, $user)
                 </select>
             </div>
             <div class="field">
-                <label for="duration">Duration</label>
-                <select id="duration" name="duration" <?= $payment_only ? 'disabled' : '' ?>>
+                <label for="duration">Duration<?= required_mark() ?></label>
+                <select id="duration" name="duration" required <?= $payment_only ? 'disabled' : '' ?>>
                     <?php for ($hours = 1; $hours <= 15; $hours++): ?>
                         <option value="<?= $hours ?>" <?= (int) $duration === $hours
     ? 'selected'
@@ -196,8 +205,8 @@ function booking_modal($page, $user)
         <p class="summary" id="booking-summary">₱300 per hour. Bookings must end by midnight.</p>
         <div class="form-grid">
             <div class="field">
-                <label for="payment_status">Payment status</label>
-                <select id="payment_status" name="payment_status">
+                <label for="payment_status">Payment status<?= required_mark() ?></label>
+                <select id="payment_status" name="payment_status" required>
                     <?php foreach (
                         ['paid' => 'Paid', 'unpaid' => 'Unpaid', 'refunded' => 'Refunded']
                         as $key => $label
@@ -212,8 +221,8 @@ function booking_modal($page, $user)
                 </select>
             </div>
             <div class="field">
-                <label for="payment_method">Payment method</label>
-                <select id="payment_method" name="payment_method">
+                <label for="payment_method">Payment method<?= required_mark() ?></label>
+                <select id="payment_method" name="payment_method" required>
                     <?php foreach (['GCash QRPH', 'Bank QRPH'] as $method): ?>
                         <option <?= fv('payment_method', $booking['payment_method'] ?? '') === $method
                             ? 'selected'
@@ -242,16 +251,16 @@ function booking_modal($page, $user)
             field('Payment date and time', 'paid_at', $paid_at, 'datetime-local');
             ?>
         </div>
-        <div class="field"><label for="payment_notes">Payment notes</label><textarea id="payment_notes" name="payment_notes" maxlength="1000"><?= e(
+        <div class="field"><label for="payment_notes">Payment notes (optional)</label><textarea id="payment_notes" name="payment_notes" maxlength="1000"><?= e(
             fv('payment_notes', $booking['payment_notes'] ?? ''),
         ) ?></textarea></div>
-        <div class="field"><label for="notes">Booking notes</label><textarea id="notes" name="notes" maxlength="1000"><?= e(
+        <div class="field"><label for="notes">Booking notes (optional)</label><textarea id="notes" name="notes" maxlength="1000"><?= e(
             fv('notes', $booking['notes'] ?? ''),
         ) ?></textarea></div>
-        <label><input type="checkbox" name="verified" value="1" <?= $booking &&
+        <label><input type="checkbox" name="verified" value="1" <?= !$booking ? 'required' : '' ?> <?= $booking &&
         $booking['payment_status'] === 'paid'
             ? 'checked'
-            : '' ?>> I manually verified that payment was received.</label>
+            : '' ?>> I manually verified that payment was received.<?= !$booking ? required_mark() : '' ?></label>
         <p class="note">New reservations require verified full payment. Changing the duration changes the required payment. Payment and refunds happen outside this website.</p>
         <?php if (is_file($payment_qr)): ?>
             <img class="payment-qr" src="<?= e($payment_qr) ?>" alt="<?= e(
@@ -261,7 +270,9 @@ function booking_modal($page, $user)
             <p class="note">The merchant QRPH image is pending. Add the venue's real QR to img/qrph.png.</p>
         <?php endif; ?>
         <div class="actions">
-            <button class="light" type="button" data-close="booking-dialog">Cancel</button>
+            <button class="light" type="button" data-close="booking-dialog"><?= action_icon(
+    'cancel',
+) ?>Cancel</button>
             <button>Save booking</button>
         </div>
     </form>

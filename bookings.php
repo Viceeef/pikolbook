@@ -4,28 +4,35 @@ $user = signed_in();
 // POST forms for creating/editing, cancelling or deleting bookings.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     check_post();
-    if (in_array($_POST['action'] ?? '', ['cancel', 'delete'], true)) {
+    if (in_array($_POST['action'] ?? '', ['cancel', 'complete', 'delete'], true)) {
         $id = (int) ($_POST['id'] ?? 0);
         try {
             $action = $_POST['action'] ?? '';
             if ($action === 'delete') {
                 admin_only($user);
             }
-            if (!in_array($action, ['cancel', 'delete'], true)) {
+            if (!in_array($action, ['cancel', 'complete', 'delete'], true)) {
                 throw new Exception('Unknown booking action.');
             }
             begin_write();
-            if (!one('SELECT id FROM bookings WHERE id=?', 'i', [$id])) {
+            $booking = one('SELECT id,status FROM bookings WHERE id=?', 'i', [$id]);
+            if (!$booking) {
                 throw new Exception('Booking not found.');
             }
-            query("UPDATE bookings SET status='cancelled' WHERE id=?", 'i', [$id]);
+            if ($action === 'complete' && $booking['status'] !== 'confirmed') {
+                throw new Exception('Only confirmed bookings can be completed.');
+            }
+            $new_status = $action === 'complete' ? 'completed' : 'cancelled';
+            query('UPDATE bookings SET status=? WHERE id=?', 'si', [$new_status, $id]);
             end_write(true);
             notice(
-                'Booking cancelled. Its slot is free and payment history is kept. No automatic refund was made.',
+                $action === 'complete'
+                    ? 'Booking marked as completed.'
+                    : 'Booking cancelled. Its slot is free and payment history is kept. No automatic refund was made.',
             );
         } catch (Exception $error) {
             end_write(false);
-            notice(error_message($error));
+            $_SESSION['error_message'] = error_message($error);
         }
         go('bookings.php');
     } else {
@@ -80,6 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $payment = $_POST['payment_status'] ?? '';
             if (!in_array($payment, ['paid', 'unpaid', 'refunded'], true)) {
                 throw new Exception('Choose a valid payment status.');
+            }
+            if (!$booking && ($_POST['verified'] ?? '') !== '1') {
+                throw new Exception('Confirm that you manually verified payment before creating this booking.');
             }
             $amount_text = text_input('amount_paid', 20);
             if (!preg_match('/^\d{1,8}(\.\d{1,2})?$/', $amount_text)) {
@@ -154,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($mode === 'new') {
                     $name = text_input('full_name', 100);
                     $phone = text_input('phone', 30);
-                    $email = email_input();
+                    $email = email_input(true);
                     query('INSERT INTO clients(full_name,phone,email) VALUES(?,?,?)', 'sss', [
                         $name,
                         $phone,
@@ -192,6 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             end_write(true);
             unset($_SESSION['form_draft']);
+            unset($_SESSION['form_error']);
             notice('Booking saved to the database.');
             go($return_page);
         } catch (Exception $error) {
@@ -214,41 +225,44 @@ require_once 'layout.php';
 page_header($title, $page, $user);
 ?>
 <div class="heading"><div><h1>Bookings & schedule</h1><p class="muted">Reservations and payment details.</p></div><button data-open="booking-dialog">+ New booking</button></div>
-<form method="get" class="toolbar">
-<?php field('Client name', 'search', $search, 'search', false); ?>
+<form method="get" class="toolbar" id="booking-filters">
+<div class="field"><label for="search">Client name</label><input id="search" name="search" type="search" value="<?= e(
+    $search,
+) ?>"></div>
 <div class="field"><label for="filter-date">Date</label><input id="filter-date" name="date" type="date" value="<?= e(
     $date,
 ) ?>"></div>
-<?php  ?>
+<button type="button" class="light filter-clear" data-filter-clear="filter-date"><?= action_icon(
+    'clear',
+) ?>Clear date</button>
 <div class="field"><label for="filter-court">Court</label><select name="court_id" id="filter-court"><option value="0">All courts</option><?php foreach (
     $courts
     as $court
 ): ?><option value="<?= (int) $court['id'] ?>" <?= $court_id === (int) $court['id']
     ? 'selected'
     : '' ?>><?= e($court['name']) ?></option><?php endforeach; ?></select></div>
-<div class="field"><label for="filter-status">Booking status</label><select name="status" id="filter-status"><option value="">All statuses</option><?php foreach (
+    <button type="button" class="light filter-clear" data-filter-clear="filter-court"><?= action_icon(
+    'clear',
+) ?>Clear court</button>
+    <div class="field"><label for="filter-status">Booking status</label><select name="status" id="filter-status"><option value="">All statuses</option><?php foreach (
     ['confirmed', 'completed', 'cancelled']
     as $s
 ): ?><option value="<?= e($s) ?>" <?= $status === $s ? 'selected' : '' ?>><?= e(
     ucfirst($s),
 ) ?></option><?php endforeach; ?></select></div>
-<button>Filter</button><a class="button light" href="bookings.php">Clear</a>
+<button type="button" class="light filter-clear" data-filter-clear="filter-status"><?= action_icon(
+    'clear',
+) ?>Clear status</button>
+<button type="submit"><?= action_icon('filter') ?>Filter</button><a class="button light" href="bookings.php"><?= action_icon(
+    'clear',
+) ?>Clear</a>
 </form>
-<section class="card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Date / Time</th><th>Court</th><th>Client</th><th>Booking</th><th>Payment details</th><th>Actions</th></tr></thead><tbody>
+<section class="card"><div class="table-wrap"><table id="booking-records"><colgroup><col class="booking-id-column"><col class="booking-time-column"><col class="booking-court-column"><col class="booking-client-column"><col class="booking-status-column"><col class="booking-payment-column"><col class="booking-actions-column"></colgroup><thead><tr><th>ID</th><th>Date / Time</th><th>Court</th><th>Client</th><th>Booking</th><th>Payment details</th><th>Actions</th></tr></thead><tbody>
 <?php
-$shown = 0;
 foreach ($bookings as $b):
-
-    if (
-        ($date && $date !== $b['booking_date']) ||
-        ($court_id && $court_id !== (int) $b['court_id']) ||
-        ($search && stripos($b['client_name'], $search) === false) ||
-        ($status && $status !== $b['status'])
-    ) {
-        continue;
-    }
-    $shown++;
-    ?><tr><td><?= (int) $b['id'] ?></td><td><?= e($b['booking_date']) ?><br><?= e(
+    ?><tr data-date="<?= e($b['booking_date']) ?>" data-court="<?= (int) $b['court_id'] ?>" data-status="<?= e(
+    $b['status'],
+) ?>"><td><?= (int) $b['id'] ?></td><td><?= e($b['booking_date']) ?><br><?= e(
     slot_label($b['start_time'], $b['end_time']),
 ) ?></td><td><?= e($b['court_name']) ?></td><td><?= e($b['client_name']) ?></td><td><?= e(
     ucfirst($b['status']),
@@ -257,25 +271,28 @@ foreach ($bookings as $b):
 ) ?><br><?= e($b['payment_reference']) ?><br><?= e($b['paid_at']) ?><br><?= e(
     $b['payment_notes'],
 ) ?></td><td><div class="row-actions">
+<?php if ($b['status'] !== 'cancelled'): ?>
 <a class="button light" href="bookings.php?edit=<?= (int) $b['id'] ?>"><?= $user['role'] === 'admin'
-    ? 'Master override'
+    ? action_icon('edit') . ' Edit'
     : 'Payment details' ?></a>
+<?php endif; ?>
 <?php if (
     $b['status'] === 'confirmed'
-): ?><form method="post" action="bookings.php" data-confirm="Cancel this booking and release the slot? Payment is not automatically refunded."><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) $b[
+): ?>
+<form method="post" action="bookings.php" data-confirm="Mark this booking as completed?"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) $b[
     'id'
-] ?>"><input type="hidden" name="action" value="cancel"><button class="light">Cancel</button></form><?php endif; ?>
-<?php if ($user['role'] === 'admin'):
-    delete_button(
-        'bookings.php',
-        $b['id'],
-        'Delete this booking from the active schedule? It will be cancelled and its payment history kept.',
-    );
-endif; ?>
+] ?>"><input type="hidden" name="action" value="complete"><button class="light"><?= action_icon(
+    'complete',
+) ?>Complete</button></form>
+<form method="post" action="bookings.php" data-confirm="Cancel this booking and release the slot? Payment is not automatically refunded."><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) $b[
+    'id'
+] ?>"><input type="hidden" name="action" value="cancel"><button class="light cancel-button"><?= action_icon(
+    'cancel',
+) ?>Cancel</button></form><?php endif; ?>
 </div></td></tr><?php
 endforeach;
 ?>
-<?php if (!$shown): ?><tr><td colspan="7">No bookings found.</td></tr><?php endif; ?>
+<tr class="filter-empty error" hidden><td colspan="7">No bookings match the selected filters.</td></tr>
 </tbody></table></div></section>
 <?php
 booking_modal($page, $user);

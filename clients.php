@@ -17,9 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 query('DELETE FROM clients WHERE id=?', 'i', [$id]);
             }
         } else {
+            if (!isset($_POST['is_active']) || !in_array($_POST['is_active'], ['0', '1'], true)) {
+                throw new Exception('Choose a client status.');
+            }
             $name = text_input('full_name', 100);
             $phone = text_input('phone', 30);
-            $email = email_input();
+            $email = email_input(true);
             query('UPDATE clients SET full_name=?,phone=?,email=?,is_active=? WHERE id=?', 'sssii', [
                 $name,
                 $phone,
@@ -52,14 +55,14 @@ page_header($title, $page, $user);
     ? 'Active'
     : 'Archived' ?></td><td><div class="row-actions"><a class="button light" href="clients.php?edit=<?= (int) $client[
     'id'
-] ?>">Edit</a><?php delete_button(
+] ?>"><?= action_icon('edit') ?>Edit</a><?php delete_button(
     'clients.php',
     $client['id'],
     'Delete this client? Clients linked to bookings will be archived to keep history.',
 ); ?></div></td></tr><?php endforeach; ?>
 <?php if (
     !$clients
-): ?><tr><td colspan="6">No clients yet. Create a booking to add one.</td></tr><?php endif; ?>
+): ?><tr data-empty-state><td colspan="6">No clients yet. Create a booking to add one.</td></tr><?php endif; ?>
 </tbody></table></div></section>
 <?php
 if ($edit): ?>
@@ -67,18 +70,21 @@ if ($edit): ?>
 <form method="post" action="clients.php"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) $edit[
     'id'
 ] ?>">
+<?php if (!empty($_SESSION['form_error'])): ?><p class="error" role="alert"><?= e($_SESSION['form_error']) ?></p><?php unset($_SESSION['form_error']); endif; ?>
 <?php
 field('Full name', 'full_name', fv('full_name', $edit['full_name']));
 field('Phone', 'phone', fv('phone', $edit['phone']), 'tel', true, 30);
-field('Email (optional)', 'email', fv('email', $edit['email']), 'email', false, 150);
+field('Email', 'email', fv('email', $edit['email']), 'email', true, 150);
 ?>
-<div class="field"><label for="is_active">Status</label><select id="is_active" name="is_active"><option value="1">Active</option><option value="0" <?= fv(
+<div class="field"><label for="is_active">Status<?= required_mark() ?></label><select id="is_active" name="is_active" required><option value="1">Active</option><option value="0" <?= fv(
     'is_active',
     $edit['is_active'],
 ) == 0
     ? 'selected'
     : '' ?>>Archived</option></select></div>
-<div class="actions"><button type="button" class="light" data-close="client-dialog">Cancel</button><button>Save client</button></div></form></dialog>
+<div class="actions"><button type="button" class="light" data-close="client-dialog"><?= action_icon(
+    'cancel',
+) ?>Cancel</button><button>Save client</button></div></form></dialog>
 <?php endif;
 page_footer();
  ?>

@@ -7,9 +7,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $name = text_input('full_name', 100);
         $email = email_input(true);
-        $phone = text_input('phone', 30, false);
+        $phone = text_input('phone', 30);
         $password = $_POST['new_password'] ?? '';
-        if ($password !== '' && (strlen($password) < 8 || strlen($password) > 72)) {
+        if (strlen($password) < 8 || strlen($password) > 72) {
             throw new Exception('A new password must contain 8–72 characters.');
         }
         begin_write();
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         notice('Your profile has been updated.');
     } catch (Exception $error) {
         end_write(false);
-        notice(error_message($error));
+        $_SESSION['error_message'] = error_message($error);
     }
     go('profile.php');
 }
@@ -50,9 +50,9 @@ page_header($title, $page, $user);
 <?php
 field('Full name', 'full_name', $user['full_name']);
 field('Email', 'email', $user['email'], 'email', true, 150);
-field('Phone (optional)', 'phone', $user['phone'], 'tel', false, 30);
+field('Phone', 'phone', $user['phone'], 'tel', true, 30);
 field('Current password', 'current_password', '', 'password', true, 72);
-field('New password (optional, 8–72 characters)', 'new_password', '', 'password', false, 72);
+field('New password (8–72 characters)', 'new_password', '', 'password', true, 72);
 ?>
 </div><button>Save profile</button></form></section>
 <?php page_footer(); ?>

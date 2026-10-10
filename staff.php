@@ -26,11 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 query('DELETE FROM users WHERE id=?', 'i', [$id]);
             }
         } else {
+            if (!isset($_POST['is_active']) || !in_array($_POST['is_active'], ['0', '1'], true)) {
+                throw new Exception('Choose a staff account status.');
+            }
             $name = text_input('full_name', 100);
             $email = email_input(true);
-            $phone = text_input('phone', 30, false);
+            $phone = text_input('phone', 30);
             $password = $_POST['password'] ?? '';
-            if ((!$id || $password !== '') && (strlen($password) < 8 || strlen($password) > 72)) {
+            if (strlen($password) < 8 || strlen($password) > 72) {
                 throw new Exception('Password must contain 8–72 characters.');
             }
             $active = ($_POST['is_active'] ?? '1') === '1' ? 1 : 0;
@@ -83,7 +86,7 @@ page_header($title, $page, $user);
     ? 'Active'
     : 'Deactivated' ?></td><td><div class="row-actions"><a class="button light" href="staff.php?edit=<?= (int) $account[
     'id'
-] ?>">Edit</a><?php delete_button(
+] ?>"><?= action_icon('edit') ?>Edit</a><?php delete_button(
     'staff.php',
     $account['id'],
     'Delete this staff account? Referenced accounts will be deactivated to preserve history.',
@@ -96,24 +99,27 @@ page_header($title, $page, $user);
 <form method="post" action="staff.php"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) ($edit[
     'id'
 ] ?? 0) ?>">
+<?php if (!empty($_SESSION['form_error'])): ?><p class="error" role="alert"><?= e($_SESSION['form_error']) ?></p><?php unset($_SESSION['form_error']); endif; ?>
 <?php
 field('Full name', 'full_name', fv('full_name', $edit['full_name'] ?? ''));
 field('Email', 'email', fv('email', $edit['email'] ?? ''), 'email', true, 150);
-field('Phone (optional)', 'phone', fv('phone', $edit['phone'] ?? ''), 'tel', false, 30);
+field('Phone', 'phone', fv('phone', $edit['phone'] ?? ''), 'tel', true, 30);
 field(
-    $edit ? 'New password (blank to keep current)' : 'Password (8–72 characters)',
+    'Password (8–72 characters)',
     'password',
     '',
     'password',
-    !$edit,
+    true,
     72,
 );
 ?>
-<div class="field"><label for="is_active">Status</label><select id="is_active" name="is_active"><option value="1">Active</option><option value="0" <?= fv(
+<div class="field"><label for="is_active">Status<?= required_mark() ?></label><select id="is_active" name="is_active" required><option value="1">Active</option><option value="0" <?= fv(
     'is_active',
     $edit['is_active'] ?? 1,
 ) == 0
     ? 'selected'
     : '' ?>>Deactivated</option></select></div>
-<div class="actions"><button type="button" class="light" data-close="staff-dialog">Cancel</button><button>Save staff</button></div></form></dialog>
+<div class="actions"><button type="button" class="light" data-close="staff-dialog"><?= action_icon(
+    'cancel',
+) ?>Cancel</button><button>Save staff</button></div></form></dialog>
 <?php page_footer(); ?>

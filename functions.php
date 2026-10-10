@@ -76,7 +76,7 @@ function text_input($name, $max, $required = true)
     }
     return $value;
 }
-function email_input($required = false)
+function email_input($required = true)
 {
     $email = text_input('email', 150, $required);
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -191,8 +191,8 @@ function available($court_id, $date, $hour, $duration = 1, $ignore_id = 0)
 }
 function field($label, $name, $value = '', $type = 'text', $required = true, $max = 100)
 {
-    echo '<div class="field"><label for="' . e($name) . '">' . e($label) . '</label>';
-    echo '<input id="' .
+    echo '<div class="field"><label for="' . e($name) . '">' . e($label) . required_mark($required) . '</label>';
+    $input = '<input id="' .
         e($name) .
         '" name="' .
         e($name) .
@@ -204,7 +204,34 @@ function field($label, $name, $value = '', $type = 'text', $required = true, $ma
         $max .
         '" ' .
         ($required ? 'required' : '') .
-        '></div>';
+        '>';
+    if ($type === 'password') {
+        echo '<div class="password-input">' .
+            $input .
+            '<button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg class="icon-eye-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8"></path><path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a16.8 16.8 0 0 1-3.2 4.1M6.2 6.2C3.5 8.1 2 12 2 12s3.6 7 10 7a10.8 10.8 0 0 0 4.1-.8"></path></svg></button></div></div>';
+    } else {
+        echo $input . '</div>';
+    }
+}
+function required_mark($required = true)
+{
+    return $required ? ' <span class="required-mark" aria-hidden="true">*</span>' : '';
+}
+function action_icon($name)
+{
+    $paths = [
+        'edit' => '<path d="m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z"></path>',
+        'cancel' => '<path d="M18 6 6 18M6 6l12 12"></path>',
+        'delete' => '<path d="M4 7h16M10 11v6M14 11v6M5 7l1 14h12l1-14M9 7V4h6v3"></path>',
+        'complete' => '<path d="m5 12 4 4L19 6"></path>',
+        'clear' => '<path d="M18 6 6 18M6 6l12 12"></path>',
+        'filter' => '<path d="M4 6h16M7 12h10m-7 6h4"></path>',
+    ];
+    return isset($paths[$name])
+        ? '<svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' .
+            $paths[$name] .
+            '</svg>'
+        : '';
 }
 function error_message($error)
 {
@@ -226,7 +253,9 @@ function delete_button($file, $id, $message)
     csrf_field();
     echo '<input type="hidden" name="id" value="' .
         (int) $id .
-        '"><input type="hidden" name="action" value="delete"><button class="light delete-button">Delete</button></form>';
+        '"><input type="hidden" name="action" value="delete"><button class="light delete-button">' .
+        action_icon('delete') .
+        ' Delete</button></form>';
 }
 function fail_form($error, $path, $id = 0)
 {
@@ -237,6 +266,6 @@ function fail_form($error, $path, $id = 0)
         $_SESSION['form_draft']['password'],
         $_SESSION['form_draft']['verified'],
     );
-    notice(error_message($error));
+    $_SESSION['form_error'] = error_message($error);
     go($path . ($id ? '?edit=' . $id : '?new=1'));
 }
