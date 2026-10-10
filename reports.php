@@ -100,7 +100,7 @@ page_header($title, $page, $user);
     : '' ?>><?= $year_option ?></option><?php endforeach; ?></select></div>
 <button type="submit"><?= action_icon('filter') ?>Filter</button><a class="button light" href="reports.php"><?= action_icon(
     'clear',
-) ?>Clear filters</a><button type="button" class="light" id="print-report">Print report</button>
+) ?>Clear all</a><button type="button" class="light" id="print-report">Print report</button>
 </form>
 <p class="note">Counts include cancelled bookings. Received payments are grouped by booking date and exclude unpaid/refunded records. Cancelling does not automatically refund payment.</p>
 </div>

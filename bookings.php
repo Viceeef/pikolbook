@@ -255,7 +255,7 @@ page_header($title, $page, $user);
 ) ?>Clear status</button>
 <button type="submit"><?= action_icon('filter') ?>Filter</button><a class="button light" href="bookings.php"><?= action_icon(
     'clear',
-) ?>Clear</a>
+) ?>Clear all</a>
 </form>
 <section class="card"><div class="table-wrap"><table id="booking-records"><colgroup><col class="booking-id-column"><col class="booking-time-column"><col class="booking-court-column"><col class="booking-client-column"><col class="booking-status-column"><col class="booking-payment-column"><col class="booking-actions-column"></colgroup><thead><tr><th>ID</th><th>Date / Time</th><th>Court</th><th>Client</th><th>Booking</th><th>Payment details</th><th>Actions</th></tr></thead><tbody>
 <?php
