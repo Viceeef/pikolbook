@@ -21,8 +21,9 @@ function page_header($title, $page, $user)
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?> | Pikolbook</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+    <!-- The file's update time tells the browser when to reload CSS and JavaScript. -->
+    <link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
+    <script src="script.js?v=<?= filemtime(__DIR__ . '/script.js') ?>" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -158,7 +159,7 @@ function booking_modal($page, $user)
             <div id="new-client-fields" hidden>
                 <?php
                 field('Full name', 'full_name', fv('full_name'));
-                field('Phone', 'phone', fv('phone'), 'tel', true, 30);
+                phone_field(fv('phone'));
                 field('Email', 'email', fv('email'), 'email', true, 150);
                 ?>
             </div>
@@ -406,9 +407,58 @@ function booking_calendar($courts, $bookings)
 <?php for ($hour=9;$hour<=23;$hour++): ?><tr><th><?= e(hour_label($hour)) ?> – <?= e(hour_label($hour+1)) ?></th>
 <?php foreach ($shown as $court): $slot=calendar_slot($court,$selected,$hour,$month_bookings,$blocks); ?>
 <td><?php if ($slot['state'] === 'free'): ?><button type="button" class="light slot-free" data-slot-date="<?= e($selected) ?>" data-slot-hour="<?= $hour ?>" data-slot-court="<?= (int) $court['id'] ?>">Available</button>
-<?php elseif ($slot['state'] === 'booked'): ?><a class="slot-booked" href="bookings.php?date=<?= e($selected) ?>&amp;court_id=<?= (int) $court['id'] ?>">Booked · <?= e($slot['label']) ?></a>
+<?php elseif ($slot['state'] === 'booked'): ?><a class="slot-booked" href="bookings.php?view=calendar&amp;month=<?= e($month) ?>&amp;day=<?= e($selected) ?>&amp;court_id=<?= $court_id ?>&amp;info=<?= (int) $slot['id'] ?>">Booked · <?= e($slot['label']) ?></a>
 <?php else: ?><span class="slot-<?= e($slot['state']) ?>"><?= e($slot['label']) ?></span><?php endif; ?></td>
 <?php endforeach; ?></tr><?php endfor; ?></tbody></table></div><?php endif; ?>
 </section>
+<?php
+}
+
+// Read-only booking details are shared by Admin and Staff.
+function booking_details_modal($user)
+{
+    $id = (int) ($_GET['info'] ?? 0);
+    if (!$id) return;
+    $booking = booking_record($id);
+    if (!$booking) {
+        $_SESSION['action_error'] = 'Booking not found.';
+        return;
+    }
+    $client = one('SELECT * FROM clients WHERE id=?', 'i', [$booking['client_id']]);
+    $court = one('SELECT name FROM courts WHERE id=?', 'i', [$booking['court_id']]);
+    $creator = one('SELECT full_name FROM users WHERE id=?', 'i', [$booking['created_by']]);
+    $back = 'bookings.php';
+    if (($_GET['view'] ?? '') === 'calendar') {
+        $back .= '?' . http_build_query(['view' => 'calendar', 'month' => $_GET['month'] ?? date('Y-m'),
+            'day' => $_GET['day'] ?? $booking['booking_date'], 'court_id' => (int) ($_GET['court_id'] ?? 0)]);
+    }
+    ?>
+<dialog id="booking-info-dialog" data-auto-open aria-labelledby="booking-info-title">
+    <div class="heading"><h2 id="booking-info-title">Booking #<?= $id ?></h2><a class="button light" href="<?= e($back) ?>">Close</a></div>
+    <div class="detail-grid">
+    <?php foreach ([
+        ['Client', $client['full_name']], ['Mobile number', phone_display($client['phone'])],
+        ['Court', $court['name']], ['Date', $booking['booking_date']],
+        ['Time', slot_label($booking['start_time'], $booking['end_time'])],
+        ['Duration', booking_hours($booking) . ' hour(s)'], ['Booking status', ucfirst($booking['status'])],
+        ['Payment status', payment_label($booking)], ['Total price', money($booking['total_amount'])],
+        ['Amount received', money($booking['amount_paid'])], ['Payment method', $booking['payment_method'] ?? 'Not recorded'],
+        ['Payment reference', $booking['payment_reference'] ?? 'Not recorded'],
+        ['Payment date', $booking['paid_at'] ?? 'Not recorded'], ['Booked by', $creator['full_name']],
+    ] as $detail): ?>
+    <p class="detail-item"><span class="detail-label"><?= e($detail[0]) ?></span><?= e($detail[1]) ?></p>
+    <?php endforeach; ?></div>
+    <?php if ($booking['series_code']): ?><p class="notice">Monthly block: <?= e($booking['series_code']) ?></p><?php endif; ?>
+    <?php if ($booking['notes']): ?><p><strong>Booking notes:</strong> <?= e($booking['notes']) ?></p><?php endif; ?>
+    <?php if ($booking['payment_notes']): ?><p><strong>Payment notes:</strong> <?= e($booking['payment_notes']) ?></p><?php endif; ?>
+    <?php if ($booking['status'] === 'cancelled'): ?>
+    <p>Reason: <?= e($booking['cancel_reason'] ?? 'Earlier cancellation') ?></p>
+    <p>Refund pending: <?= e(money(max(0, (float) $booking['refund_due'] - (float) $booking['refunded_amount']))) ?> · Refund paid: <?= e(money($booking['refunded_amount'] ?? 0)) ?></p>
+    <?php endif; ?>
+    <div class="actions"><a class="button light" href="<?= e($back) ?>">Back</a>
+    <?php if ($booking['status'] !== 'cancelled' && $booking['payment_status'] !== 'refunded'): ?>
+    <a class="button" href="bookings.php?edit=<?= $id ?>"><?= $user['role'] === 'admin' ? 'Edit booking' : 'Payment details' ?></a>
+    <?php endif; ?></div>
+</dialog>
 <?php
 }

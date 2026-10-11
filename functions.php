@@ -77,6 +77,41 @@ function text_input($name, $max, $required = true)
     }
     return $value;
 }
+// All contact numbers in this project are Philippine mobile numbers.
+// Accept common local/international input; keep one +63 format in MySQL.
+function normalize_phone($value)
+{
+    if (!is_string($value)) return null;
+    $number = str_replace([' ', '-'], '', trim($value));
+    if (preg_match('/^09[0-9]{9}$/', $number)) $number = '+63' . substr($number, 1);
+    elseif (preg_match('/^9[0-9]{9}$/', $number)) $number = '+63' . $number;
+    elseif (preg_match('/^639[0-9]{9}$/', $number)) $number = '+' . $number;
+    return preg_match('/^\+639[0-9]{9}$/', $number) ? $number : null;
+}
+function phone_input()
+{
+    $phone = normalize_phone($_POST['phone'] ?? '');
+    if ($phone === null) {
+        throw new Exception('Enter a valid Philippine mobile number: +639 followed by 9 digits. Letters are not allowed.');
+    }
+    return $phone;
+}
+function phone_display($value)
+{
+    if ($value === null || trim((string) $value) === '') return 'Not provided';
+    return normalize_phone($value) ?? 'Needs correction';
+}
+function phone_field($value = '')
+{
+    if (!is_string($value)) $value = '';
+    $normalized = normalize_phone($value ?? '');
+    $local = $normalized ? substr($normalized, 3) : ($value ?? '');
+    echo '<div class="field"><label for="phone">Philippine mobile number' . required_mark() . '</label>';
+    echo '<div class="phone-input"><span class="phone-prefix" aria-hidden="true">+63</span>';
+    echo '<input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" value="' . e($local) . '" maxlength="30" pattern="9[0-9]{9}" title="Enter 10 digits starting with 9, for example 9171234567" placeholder="9171234567" required aria-describedby="phone-help"></div>';
+    echo '<p class="note" id="phone-help">Enter 10 digits starting with 9. Your number is saved with +63.' . ($local === '' ? ' No phone number is stored yet; enter your real number.' : '') . '</p></div>';
+}
+
 function email_input($required = true)
 {
     $email = text_input('email', 150, $required);

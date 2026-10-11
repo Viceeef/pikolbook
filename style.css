@@ -580,7 +580,7 @@ input[type='checkbox'] {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-bottom: 20px;
 }
 
@@ -592,6 +592,19 @@ input[type='checkbox'] {
 
 .report-view {
     margin-bottom: 20px;
+}
+
+#report-note {
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+
+.report-actions,
+.report-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .validation-error {
@@ -971,6 +984,13 @@ summary {
 }
 
 /* Calendar and feedback: ordinary classes, no calendar library. */
+.report-button {
+    height: 44px;
+    margin: 0;
+    padding: 0 18px;
+    white-space: nowrap;
+}
+
 .view-switch { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 20px; }
 .calendar-scroll { overflow-x: auto; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); min-width: 770px; gap: 6px; }
@@ -999,3 +1019,11 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 @media (max-width: 800px) { .mobile-note { display: block; color: #64736b; font-size: 13px; } }
 
 .monthly-tag { display: inline-block; padding: 3px 6px; border-radius: 8px; background: #e7f0dc; color: #235533; font-size: 11px; white-space: nowrap; }
+
+.phone-input { display: flex; align-items: center; }
+.phone-prefix { padding: 11px 12px; background: #e7f0dc; border: 1px solid #bdcbbb; border-right: 0; border-radius: 8px 0 0 8px; font-weight: 600; }
+#phone { min-width: 0; border-radius: 0 8px 8px 0; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
+.detail-item { margin: 0; overflow-wrap: anywhere; }
+.detail-label { display: block; color: #64736b; font-size: 13px; }
+@media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }

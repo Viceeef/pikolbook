@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mode = $_POST['client_mode'] ?? '';
             if ($mode === 'new') {
                 $name = text_input('full_name', 100);
-                $phone = text_input('phone', 30);
+                $phone = phone_input();
                 $email = email_input(true);
                 query('INSERT INTO clients(full_name,phone,email) VALUES(?,?,?)', 'sss', [$name,$phone,$email]);
                 $client_id = mysqli_insert_id($db);
@@ -242,7 +242,7 @@ foreach ($bookings as $b):
     $b['status'],
 ) ?>"><td><?= (int) $b['id'] ?><?php if ($b['series_code']): ?><br><span class="monthly-tag" title="Monthly block <?= e($b['series_code']) ?>">Monthly</span><?php endif; ?></td><td><?= e($b['booking_date']) ?><br><?= e(
     slot_label($b['start_time'], $b['end_time']),
-) ?></td><td><?= e($b['court_name']) ?></td><td><?= e($b['client_name']) ?></td><td><?= e(
+) ?></td><td><?= e($b['court_name']) ?></td><td><a href="bookings.php?info=<?= (int) $b['id'] ?>"><?= e($b['client_name']) ?></a></td><td><?= e(
     ucfirst($b['status']),
 ) ?></td><td><?= e(payment_label($b)) ?><br>Received: <?= e(money($b['amount_paid'])) ?><br><?= e(
     $b['payment_method'],
@@ -272,6 +272,7 @@ endforeach;
 </tbody></table></div></section>
 <?php
 }
+booking_details_modal($user);
 cancellation_modal();
 booking_modal($page, $user);
 page_footer();

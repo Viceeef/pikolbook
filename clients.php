@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Choose a client status.');
             }
             $name = text_input('full_name', 100);
-            $phone = text_input('phone', 30);
+            $phone = phone_input();
             $email = email_input(true);
             query('UPDATE clients SET full_name=?,phone=?,email=?,is_active=? WHERE id=?', 'sssii', [
                 $name,
@@ -48,12 +48,12 @@ $edit = !empty($_GET['edit']) ? one('SELECT * FROM clients WHERE id=?', 'i', [(i
 require_once 'layout.php';
 page_header($title, $page, $user);
 ?>
-<h1>Client management</h1><p class="muted">Edit or delete clients here. New clients are added only with a new booking.</p>
+<div class="heading"><div><h1>Client management</h1><p class="muted">Edit or delete clients here. New clients are added only with a new booking.</p></div></div>
 <div class="field"><label for="table-search">Search clients</label><input id="table-search" type="search" data-search="records"></div>
 <section class="card"><div class="table-wrap"><table id="records"><thead><tr><th>ID</th><th>Full name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody>
 <?php foreach ($clients as $client): ?><tr><td><?= (int) $client['id'] ?></td><td><?= e(
     $client['full_name'],
-) ?></td><td><?= e($client['email']) ?></td><td><?= e($client['phone']) ?></td><td><?= $client['is_active']
+) ?></td><td><?= e($client['email']) ?></td><td><?= e(phone_display($client['phone'])) ?></td><td><?= $client['is_active']
     ? 'Active'
     : 'Archived' ?></td><td><div class="row-actions"><a class="button light" href="clients.php?edit=<?= (int) $client[
     'id'
@@ -75,7 +75,7 @@ if ($edit): ?>
 <?php if (!empty($_SESSION['form_error'])): ?><p class="error" role="alert"><?= e($_SESSION['form_error']) ?></p><?php unset($_SESSION['form_error']); endif; ?>
 <?php
 field('Full name', 'full_name', fv('full_name', $edit['full_name']));
-field('Phone', 'phone', fv('phone', $edit['phone']), 'tel', true, 30);
+phone_field(fv('phone', $edit['phone']));
 field('Email', 'email', fv('email', $edit['email']), 'email', true, 150);
 ?>
 <div class="field"><label for="is_active">Status<?= required_mark() ?></label><select id="is_active" name="is_active" required><option value="1">Active</option><option value="0" <?= fv(

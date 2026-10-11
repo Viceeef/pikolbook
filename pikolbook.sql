@@ -169,3 +169,21 @@ INSERT INTO users(full_name,email,password_hash,role,is_active)
 SELECT 'TTH Staff', 'tth@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email='tth@pikolbook.com');
 
+
+-- Normalize valid existing mobile numbers. Missing/invalid data is never invented.
+UPDATE users SET phone = CASE
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^09[0-9]{9}$' THEN CONCAT('+63', SUBSTRING(REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', ''), 2))
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^9[0-9]{9}$' THEN CONCAT('+63', REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', ''))
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^639[0-9]{9}$' THEN CONCAT('+', REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', ''))
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^[+]639[0-9]{9}$' THEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '')
+ ELSE phone END
+WHERE phone IS NOT NULL;
+
+UPDATE clients SET phone = CASE
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^09[0-9]{9}$' THEN CONCAT('+63', SUBSTRING(REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', ''), 2))
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^9[0-9]{9}$' THEN CONCAT('+63', REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', ''))
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^639[0-9]{9}$' THEN CONCAT('+', REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', ''))
+ WHEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '') REGEXP '^[+]639[0-9]{9}$' THEN REPLACE(REPLACE(TRIM(phone), ' ', ''), '-', '')
+ ELSE phone END
+WHERE phone IS NOT NULL;
+

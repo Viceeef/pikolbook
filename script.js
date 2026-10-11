@@ -125,7 +125,7 @@ if (bookingFilters) {
 }
 const reportButtons = document.querySelectorAll('[data-report-view]');
 if (reportButtons.length) {
-    const reportFilters = document.getElementById('report-filter-wrap');
+    const reportFilters = document.querySelectorAll('[data-periodic-filter]');
     reportButtons.forEach(function (button) {
         button.addEventListener('click', function () {
             reportButtons.forEach(function (item) {
@@ -133,7 +133,9 @@ if (reportButtons.length) {
                 item.setAttribute('aria-pressed', String(selected));
                 document.getElementById(item.dataset.reportView).hidden = !selected;
             });
-            reportFilters.hidden = button.dataset.reportView !== 'periodic-report';
+            reportFilters.forEach(function (filter) {
+                filter.hidden = button.dataset.reportView !== 'periodic-report';
+            });
         });
     });
 }
@@ -329,4 +331,37 @@ if (bookingForm) {
         document.getElementById('save-booking').textContent = 'Saving…';
     });
     updateSummary(false);
+}
+
+/* Local mobile input: +63 stays visible; only the ten national digits are saved. */
+const phoneInput = document.getElementById('phone');
+if (phoneInput) {
+    function localPhone(value) {
+        const number = value.trim().replace(/[ -]/g, '');
+        if (/^\+639[0-9]{9}$/.test(number)) return number.slice(3);
+        if (/^639[0-9]{9}$/.test(number)) return number.slice(2);
+        if (/^09[0-9]{9}$/.test(number)) return number.slice(1);
+        return number;
+    }
+    function validatePhone() {
+        const number = localPhone(phoneInput.value);
+        const valid = number === '' || /^9[0-9]{9}$/.test(number);
+        if (/^9[0-9]{9}$/.test(number)) phoneInput.value = number;
+        phoneInput.setCustomValidity(valid ? '' : 'Enter 10 digits starting with 9. Letters are not allowed.');
+        return number;
+    }
+    phoneInput.addEventListener('input', validatePhone);
+    phoneInput.addEventListener('blur', function () {
+        const number = validatePhone();
+        if (/^9[0-9]{9}$/.test(number)) phoneInput.value = number;
+    });
+    phoneInput.addEventListener('paste', function (event) {
+        const number = localPhone(event.clipboardData.getData('text'));
+        if (/^9[0-9]{9}$/.test(number)) {
+            event.preventDefault();
+            phoneInput.value = number;
+            phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
+    validatePhone();
 }

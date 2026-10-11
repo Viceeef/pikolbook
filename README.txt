@@ -43,7 +43,7 @@ Bookings & schedule has List view and Calendar view, following the wireframe.
 Choose a month and court. Each day shows booked and available court-hours,
 plus maintenance hours where relevant. All courts adds their hours together.
 Click a day to see hourly availability. Available opens the booking form
-with that court, date and time. Booked links to the filtered booking list.
+with that court, date and time. Booked opens the details for that exact booking.
 Past hours and maintenance are not offered as available. Cancelled bookings
 release their slots. Calendar availability is checked again when saving.
 
@@ -78,6 +78,24 @@ so a refund changes the net total for the original booking's period.
 The dashboard's Net receipts today is payments dated today minus refunds
 recorded today. It can differ from reports grouped by booking date.
 Print works on the selected report. Invalid reversed date ranges show an error.
+
+PHONE NUMBERS
+All contact numbers in this project use Philippine mobile format +639XXXXXXXXX.
+Forms show a fixed +63 prefix and accept the ten national digits starting with 9.
+Pasting a valid 09..., 63... or +63... number converts it to that format.
+Letters, incorrect lengths, wrong country codes and invalid prefixes are rejected
+both in the browser and by PHP. Server submissions accept the same local formats.
+Existing valid local numbers are converted to +63 when the SQL is imported.
+Invalid old entries must be corrected using the actual person's number.
+Seeded accounts have no real phone numbers supplied. They display Not provided
+until you enter one. We do not assign invented contact numbers to real accounts.
+After a number is saved, Edit staff and Edit profile load it from MySQL.
+
+BOOKING DETAILS
+Click a client name in the booking list or a booked slot in the calendar to
+open a read-only booking popup. It shows court, date, time, duration, client
+mobile, payment information, notes and cancellation/refund history.
+Admin and Staff can view details. Closing a calendar popup keeps its day/month.
 
 STAFF AND PASSWORDS
 The users table already has a phone column. Staff forms and Edit profile

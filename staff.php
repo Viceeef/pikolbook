@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $name = text_input('full_name', 100);
             $email = email_input(true);
-            $phone = text_input('phone', 30);
+            $phone = phone_input();
             $password = $_POST['password'] ?? '';
             if (!$id && (strlen($password) < 8 || strlen($password) > 72)) {
                 throw new Exception('Password must contain 8–72 characters.');
@@ -92,7 +92,7 @@ page_header($title, $page, $user);
 <section class="card"><div class="table-wrap"><table id="records"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody>
 <?php foreach ($staff as $account): ?><tr><td><?= e($account['full_name']) ?></td><td><?= e(
     $account['email'],
-) ?></td><td><?= e($account['phone']) ?></td><td><?= $account['is_active']
+) ?></td><td><?= e(phone_display($account['phone'])) ?></td><td><?= $account['is_active']
     ? 'Active'
     : 'Deactivated' ?></td><td><div class="row-actions"><a class="button light" href="staff.php?edit=<?= (int) $account[
     'id'
@@ -113,7 +113,7 @@ page_header($title, $page, $user);
 <?php
 field('Full name', 'full_name', fv('full_name', $edit['full_name'] ?? ''));
 field('Email', 'email', fv('email', $edit['email'] ?? ''), 'email', true, 150);
-field('Phone', 'phone', fv('phone', $edit['phone'] ?? ''), 'tel', true, 30);
+phone_field(fv('phone', $edit['phone'] ?? ''));
 if (!$edit) {
     field('Initial password (8–72 characters)', 'password', '', 'password', true, 72);
 } else {

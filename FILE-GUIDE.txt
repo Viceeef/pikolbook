@@ -22,6 +22,9 @@ functions.php
   cancellation_targets() selects one booking or future dates in a block.
   net_received() subtracts recorded refunds from a paid booking's amount.
   calendar_slot() uses loaded bookings/maintenance to label each hourly cell.
+  normalize_phone() accepts common local input and returns +639XXXXXXXXX.
+  phone_input() rejects invalid submissions on the server.
+  phone_field() outputs the +63 input and phone_display() labels missing data.
   fail_form() restores safe booking entries after failure, excluding passwords.
 
 layout.php
@@ -31,6 +34,7 @@ layout.php
   booking_modal() outputs the booking form and foreground error popup.
   cancellation_modal() outputs the cancellation review or refund form.
   booking_calendar() displays the month and selected day's court/time table.
+  booking_details_modal() displays the exact booking selected by its ID.
   Keeping these together avoids extra PHP files for each popup.
 
 bookings.php
@@ -81,7 +85,7 @@ style.css
 script.js
   Handles popup buttons, password visibility, confirmation, client search,
   live table filters, report tabs, required fields, recurring date/price preview,
-  calendar slot selection and print. Uses plain JavaScript and the existing DOM.
+  calendar slot selection, mobile-number validation and print. Uses plain JavaScript and the existing DOM.
   No fetch calls, external API or database credentials are used in JavaScript.
   PHP validates the submitted values again; browser checks alone are not trusted.
 
@@ -97,7 +101,8 @@ pikolbook.sql
     booking_details Optional monthly-block code and cancellation/refund history.
   booking_details uses booking_id to connect to bookings. It avoids adding
   repeated payment/refund text into booking notes or changing old records.
-  Reimport preserves existing passwords, phones, bookings, clients and court rates.
+  Reimport preserves passwords, bookings, clients and court rates. Valid old
+  phone numbers are converted to +63; invalid or missing numbers are not invented.
 
 img/logo.png and img/login_logo.png
   Original sidebar and login logos.
