@@ -1,7 +1,7 @@
 -- Pikolbook starter database for XAMPP.
 -- Import this file in phpMyAdmin. The three assigned accounts are ready immediately.
 -- Account password: phpadmin (stored below as a bcrypt hash).
--- Reimporting resets these three assigned accounts to the specified credentials.
+-- Reimporting preserves existing account passwords and phone numbers.
 -- No existing tables or records are deleted.
 
 CREATE DATABASE IF NOT EXISTS pikolbook_db
@@ -76,51 +76,46 @@ CREATE TABLE IF NOT EXISTS bookings (
   INDEX court_schedule (court_id, booking_date, status)
 ) ENGINE=InnoDB;
 
--- ANALYTICS VIEWS
--- 1. Periodic Reporting (Yearly & Monthly Revenue/Booking Summary)
+-- Monthly blocks and cancellation/refund history. Existing bookings need no changes.
+CREATE TABLE IF NOT EXISTS booking_details (
+  booking_id INT PRIMARY KEY,
+  series_code VARCHAR(32),
+  cancelled_at DATETIME,
+  cancel_reason VARCHAR(500),
+  refund_due DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  refunded_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  refunded_at DATETIME,
+  refund_reference VARCHAR(100),
+  handled_by INT,
+  FOREIGN KEY (booking_id) REFERENCES bookings(id),
+  FOREIGN KEY (handled_by) REFERENCES users(id),
+  INDEX monthly_block (series_code)
+) ENGINE=InnoDB;
+
+-- Reports include all booking statuses. Revenue is paid money minus recorded refunds.
 CREATE OR REPLACE VIEW view_periodic_reporting AS
-SELECT 
-    YEAR(booking_date) AS report_year,
-    MONTH(booking_date) AS report_month,
-    MONTHNAME(booking_date) AS month_name,
-    COUNT(id) AS total_bookings,
-    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_bookings,
-    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_bookings,
-    SUM(CASE WHEN payment_status = 'paid' THEN amount_paid ELSE 0 END) AS total_revenue
-FROM bookings
-GROUP BY YEAR(booking_date), MONTH(booking_date);
+SELECT YEAR(b.booking_date) AS report_year, MONTH(b.booking_date) AS report_month,
+ MONTHNAME(b.booking_date) AS month_name, COUNT(b.id) AS total_bookings,
+ SUM(b.status='completed') AS completed_bookings, SUM(b.status='cancelled') AS cancelled_bookings,
+ SUM(CASE WHEN b.payment_status='paid' THEN GREATEST(0,b.amount_paid-COALESCE(d.refunded_amount,0)) ELSE 0 END) AS total_revenue
+FROM bookings b LEFT JOIN booking_details d ON d.booking_id=b.id
+GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), MONTHNAME(b.booking_date);
 
--- 2. Resource Analytics (Bookings & Revenue per Court per Year & Month)
 CREATE OR REPLACE VIEW view_analytics_by_resource AS
-SELECT 
-    YEAR(b.booking_date) AS report_year,
-    MONTH(b.booking_date) AS report_month,
-    MONTHNAME(b.booking_date) AS month_name,
-    c.id AS court_id,
-    c.name AS court_name,
-    COUNT(b.id) AS total_bookings,
-    SUM(CASE WHEN b.payment_status = 'paid' THEN b.amount_paid ELSE 0 END) AS total_revenue
-FROM bookings b
-JOIN courts c ON b.court_id = c.id
-WHERE b.status != 'cancelled'
-GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), c.id;
+SELECT YEAR(b.booking_date) AS report_year, MONTH(b.booking_date) AS report_month,
+ MONTHNAME(b.booking_date) AS month_name, c.id AS court_id, c.name AS court_name,
+ COUNT(b.id) AS total_bookings,
+ SUM(CASE WHEN b.payment_status='paid' THEN GREATEST(0,b.amount_paid-COALESCE(d.refunded_amount,0)) ELSE 0 END) AS total_revenue
+FROM bookings b JOIN courts c ON c.id=b.court_id LEFT JOIN booking_details d ON d.booking_id=b.id
+GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), MONTHNAME(b.booking_date), c.id, c.name;
 
--- 3. Client Analytics (Bookings & Expenditure per Client per Year & Month)
 CREATE OR REPLACE VIEW view_analytics_by_client AS
-SELECT 
-    YEAR(b.booking_date) AS report_year,
-    MONTH(b.booking_date) AS report_month,
-    MONTHNAME(b.booking_date) AS month_name,
-    cl.id AS client_id,
-    cl.full_name AS client_name,
-    cl.phone AS client_phone,
-    COUNT(b.id) AS total_bookings,
-    SUM(b.amount_paid) AS total_spent
-FROM bookings b
-JOIN clients cl ON b.client_id = cl.id
-WHERE b.status != 'cancelled'
-GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), cl.id;
-
+SELECT YEAR(b.booking_date) AS report_year, MONTH(b.booking_date) AS report_month,
+ MONTHNAME(b.booking_date) AS month_name, cl.id AS client_id, cl.full_name AS client_name, cl.phone AS client_phone,
+ COUNT(b.id) AS total_bookings,
+ SUM(CASE WHEN b.payment_status='paid' THEN GREATEST(0,b.amount_paid-COALESCE(d.refunded_amount,0)) ELSE 0 END) AS total_spent
+FROM bookings b JOIN clients cl ON cl.id=b.client_id LEFT JOIN booking_details d ON d.booking_id=b.id
+GROUP BY YEAR(b.booking_date), MONTH(b.booking_date), MONTHNAME(b.booking_date), cl.id, cl.full_name, cl.phone;
 
 -- COURTS
 -- Add the four starting courts when missing.
@@ -140,10 +135,6 @@ INSERT INTO courts (name, description, hourly_rate, opening_time, closing_time)
 SELECT 'Court 4', 'Pickleball court', 300.00, '09:00:00', '00:00:00'
 WHERE NOT EXISTS (SELECT 1 FROM courts WHERE name = 'Court 4');
 
--- Apply the confirmed settings to the four named courts only.
--- Existing bookings keep their original times and recorded amounts.
-UPDATE courts SET hourly_rate = 300.00, opening_time = '09:00:00', closing_time = '00:00:00'
-WHERE name IN ('Court 1', 'Court 2', 'Court 3', 'Court 4');
 
 -- ASSIGNED ACCOUNTS
 -- Rename the old starter accounts without changing their IDs or booking history.
@@ -165,13 +156,16 @@ WHERE email = 'tths@pikolbook.test' AND NOT EXISTS (
   WHERE email = 'tth@pikolbook.com'
 );
 
--- Add missing accounts, or update the existing assigned account credentials.
-INSERT INTO users (full_name, email, password_hash, role, is_active) VALUES
-('Administrator', 'admin@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'admin', 1),
-('MWF Staff', 'mwf@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1),
-('TTH Staff', 'tth@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1)
-ON DUPLICATE KEY UPDATE
-  full_name = VALUES(full_name),
-  password_hash = VALUES(password_hash),
-  role = VALUES(role),
-  is_active = VALUES(is_active);
+-- Add the assigned accounts only when missing. Password for new accounts: phpadmin.
+INSERT INTO users(full_name,email,password_hash,role,is_active)
+SELECT 'Administrator', 'admin@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'admin', 1
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email='admin@pikolbook.com');
+
+INSERT INTO users(full_name,email,password_hash,role,is_active)
+SELECT 'MWF Staff', 'mwf@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email='mwf@pikolbook.com');
+
+INSERT INTO users(full_name,email,password_hash,role,is_active)
+SELECT 'TTH Staff', 'tth@pikolbook.com', '$2y$12$oki7pu9Z.vNORG1wJ7s9yuMMU0J8S8XBgLjb0lZTcfR9K8ev7LTZu', 'staff', 1
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email='tth@pikolbook.com');
+

@@ -5,7 +5,7 @@ $title = 'System overview';
 $page = 'dashboard.php';
 $today = date('Y-m-d');
 $schedule = rows(
-    'SELECT b.*, c.name AS court_name, cl.full_name AS client_name FROM bookings b JOIN courts c ON c.id=b.court_id JOIN clients cl ON cl.id=b.client_id WHERE b.booking_date=? ORDER BY b.start_time',
+    'SELECT b.*, d.refunded_amount,d.refund_due,c.name AS court_name, cl.full_name AS client_name FROM bookings b JOIN courts c ON c.id=b.court_id JOIN clients cl ON cl.id=b.client_id LEFT JOIN booking_details d ON d.booking_id=b.id WHERE b.booking_date=? ORDER BY b.start_time',
     's',
     [$today],
 );
@@ -18,12 +18,14 @@ $courts = one(
     [date('Y-m-d H:i:s'), date('Y-m-d H:i:s')],
 );
 $clients = one('SELECT COUNT(*) AS total FROM clients WHERE is_active=1');
+$refunds = one('SELECT COALESCE(SUM(refunded_amount),0) AS total FROM booking_details WHERE DATE(refunded_at)=?', 's', [$today]);
 $payments = one(
     "SELECT COALESCE(SUM(amount_paid),0) AS total FROM bookings WHERE DATE(paid_at)=? AND payment_status='paid'",
     's',
     [$today],
 );
 require_once 'layout.php';
+
 page_header($title, $page, $user);
 ?>
 <div class="heading"><div><h1>System overview</h1><p class="muted">A quick look at your courts and today's play.</p></div><button data-open="booking-dialog">+ New booking</button></div>
@@ -33,7 +35,7 @@ page_header($title, $page, $user);
             ['Bookings today', $counts['total']],
             ['Courts in service', $courts['total']],
             ['Active clients', $clients['total']],
-            ['Payments received today', money($payments['total'])],
+            ['Net receipts today', money($payments['total'] - $refunds['total'])],
         ]
         as $stat
     ): ?>
@@ -47,7 +49,7 @@ page_header($title, $page, $user);
     slot_label($booking['start_time'], $booking['end_time']),
 ) ?></td><td><?= e($booking['court_name']) ?></td><td><?= e($booking['client_name']) ?></td><td><?= e(
     ucfirst($booking['status']),
-) ?></td><td><?= e(ucfirst($booking['payment_status'])) ?></td></tr><?php endforeach; ?>
+) ?></td><td><?= e(payment_label($booking)) ?></td></tr><?php endforeach; ?>
 <?php if (!$schedule): ?><tr><td colspan="5">No bookings today.</td></tr><?php endif; ?>
 </tbody></table></div></section>
 <?php

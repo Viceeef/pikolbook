@@ -1,115 +1,113 @@
-PIKOLBOOK - WORKING PHP / MYSQL VERSION
+PIKOLBOOK - MONTHLY BLOCKING AND CALENDAR UPDATE
 
-UPDATING YOUR WORKING COPY
-1. Keep your database. Import the updated pikolbook.sql in phpMyAdmin.
-   It preserves bookings and clients, renames old starter accounts when
-   possible, and resets the three assigned accounts to password phpadmin.
-2. Rename C:\xampp\htdocs\pikolbook to pikolbook-old as a backup.
-3. Extract this ZIP and put its new pikolbook folder in C:\xampp\htdocs\.
-   Replace the project folder; do not merge old PHP/HTML files into it.
-4. If you customized the database settings, enter the same host, port,
-   database, username and password values at the top of the new config.php.
-   Do not copy the entire old config.php; the new one also connects to MySQL.
-5. Open http://localhost/pikolbook/ and use one of the accounts listed below.
-6. Press Ctrl+F5 once so the browser loads the updated CSS and JavaScript.
+INSTALL OR UPDATE IN XAMPP
+1. Back up your current project folder and export pikolbook_db in phpMyAdmin.
+2. Copy the PHP, CSS, JS and SQL files from this pikolbook folder into
+   C:\xampp\htdocs\pikolbook. Keep your repository's Git files in place.
+   Keep your own merchant QR image and any customized database settings.
+3. Start Apache and MySQL. In http://localhost/phpmyadmin/, import the new
+   pikolbook.sql. This is REQUIRED for the new booking_details table.
+   Do not delete your database. Existing bookings and clients are preserved.
+   Importing again keeps existing passwords, phones and court rates.
+4. Check config.php if your database connection differs from XAMPP defaults.
+5. Open http://localhost/pikolbook/ and press Ctrl+F5 to reload CSS and JS.
 
-Your MySQL records are outside the project folder and are not deleted by
-replacing the PHP files. The SQL table structure is unchanged; existing
-one-hour bookings remain valid.
+ACCOUNTS
+New databases get these accounts directly from SQL, with password phpadmin:
+  admin@pikolbook.com   Admin
+  mwf@pikolbook.com     Staff
+  tth@pikolbook.com     Staff
+Existing accounts keep their current passwords after import.
+There is no sign-up or setup page. MWF/TTH are account labels, not day limits.
+The MySQL connection uses root with an empty password by default. phpadmin
+is the website password, not the MySQL root password.
 
-FIRST INSTALLATION ONLY (WINDOWS XAMPP)
-1. Extract the ZIP into C:\xampp\htdocs\ so you have a pikolbook folder.
-2. Start Apache and MySQL in XAMPP Control Panel.
-3. Open http://localhost/phpmyadmin/. Click Import, choose pikolbook.sql
-   from this folder and click Go. The SQL creates pikolbook_db, the five
-   original tables, analytics views and Court 1 through Court 4.
-4. Log in at http://localhost/pikolbook/ with one of these accounts:
-     Admin: admin@pikolbook.com
-     MWF Staff: mwf@pikolbook.com
-     TTH Staff: tth@pikolbook.com
-   Password for all three: phpadmin
+MONTHLY BLOCKING
+Open New booking, select a client and choose Monthly block.
+Choose the first date, court, start time and duration. The same weekday and
+hours repeat every 7 days until the end of that calendar month.
+For a full month, choose the first occurrence of the weekday in that month.
+A later first date reserves only the remaining occurrences. No past dates
+are included automatically, skipped, or silently moved to a different month.
+Example: four Tuesdays at 5-7 PM cost 4 x 2 x PHP 300 = PHP 2,400.
+The form lists the dates and total before saving. Verify the single full
+payment and enter its reference. Each date gets one booking and its share
+of the amount, linked by a monthly-block code. Reports do not double-count.
+If even one date is unavailable, nothing in that submission is saved.
+Admin can reschedule a single future occurrence within the same month at
+the same price. Shared payment details remain fixed. To change its price,
+cancel the relevant occurrence and create a new booking/payment record.
 
-There is no sign-up or first-time setup page. The SQL file stores bcrypt
-password hashes; index.php checks them with password_verify(). Importing
-this SQL again resets these three assigned accounts to phpadmin.
-The database connection still uses XAMPP's root user with an empty password;
-phpadmin is the website account password, not the MySQL root password.
-Always open PHP through localhost, not by double-clicking a PHP file.
-If Apache uses port 8080, use http://localhost:8080/pikolbook/ instead.
+CALENDAR
+Bookings & schedule has List view and Calendar view, following the wireframe.
+Choose a month and court. Each day shows booked and available court-hours,
+plus maintenance hours where relevant. All courts adds their hours together.
+Click a day to see hourly availability. Available opens the booking form
+with that court, date and time. Booked links to the filtered booking list.
+Past hours and maintenance are not offered as available. Cancelled bookings
+release their slots. Calendar availability is checked again when saving.
 
-WHAT CHANGED IN THIS UPDATE
-- Start time and duration replace the fixed one-hour slot choice.
-- Choose whole-hour durations from 1 to 15 hours, ending by midnight.
-- The form shows end time and total price at PHP 300 per hour.
-- Longer bookings are checked across their full time range on the server.
-- Admin can resize a confirmed booking after recording the correct payment.
-- Staff can change payment details but cannot change time or duration.
-- Selected sidebar tabs keep the same font size and weight.
-- Filter / Clear / All dates / Print report match the input height.
-- 11 PHP files remain; the first-time setup page has been removed.
-- FILE-GUIDE.txt explains every remaining file and the merged files.
+CANCELLATIONS AND REFUNDS
+The example image did not specify one exact rule. This update uses:
+  At least 24 hours before start: 100% refund eligibility.
+  From 3 to under 24 hours before start: 50% refund eligibility.
+  Under 3 hours, already started or no-show: 0% refund eligibility.
+All timing uses Asia/Manila, including the database connection.
+Select Cancel, review the dates and refund amount, and enter a reason.
+For a monthly block, choose one date or all future confirmed dates in it.
+The rule applies separately to each occurrence's share of the payment.
+If the refund changes while the form is open, it asks you to review again.
+Confirm cancellation immediately releases the selected slots and records
+the reason, time, user and refund due. It does not send money.
+After sending a refund outside the website, choose Record refund for that
+date and enter the actual transaction reference. The full amount due for
+that date is recorded. A refund cannot be recorded twice. Use one refund
+transaction per date; transaction references cannot be reused.
+Cancelled bookings and earlier refunded records cannot be edited.
+Completed bookings cannot be cancelled. Complete is available only after
+an entire reserved time has ended. There is no booking delete action.
+Old cancellations without recorded policy details keep their old history;
+the new policy is not applied retroactively to them.
 
-SIMPLE FILE ORGANIZATION
-All PHP, CSS, JS, SQL and reference files are together in pikolbook/.
-Only images are in img/. There are no mockups/, docs/, needed/,
-admin/, staff/, assets/ or week subfolders.
+REPORTS
+Your teammate's three report tabs and month/year filters are retained.
+Filters apply to Periodic reporting. Resource/client reports cover all dates.
+Net received = paid booking amounts minus refunds recorded as actually paid.
+Pending refunds are shown separately. Amounts are grouped by booking date,
+so a refund changes the net total for the original booking's period.
+The dashboard's Net receipts today is payments dated today minus refunds
+recorded today. It can differ from reports grouped by booking date.
+Print works on the selected report. Invalid reversed date ranges show an error.
 
-DATABASE SETTINGS
-config.php uses the local XAMPP defaults:
-  Host: 127.0.0.1
-  Port: 3306
-  Database: pikolbook_db
-  Username: root
-  Password: empty
-Change only those values if your local configuration differs.
+STAFF AND PASSWORDS
+The users table already has a phone column. Staff forms and Edit profile
+save and display it. Seeded accounts have no invented phone numbers; enter
+their actual numbers using Edit staff or Edit profile.
+Edit staff changes name, email, phone and active status, keeping the password.
+New staff requires an initial password. Staff changes their own password in
+Edit profile using their current password and matching new passwords.
+Leaving the new password blank keeps it while updating other profile data.
+Admin has a separate Reset password action for forgotten staff passwords;
+it requires the Admin's own password. Previous sessions are rejected after
+a password change. The current user's own profile session is refreshed.
+Password eye buttons work on login and password forms.
+Passwords are hashed in MySQL; they are never displayed or stored as plain text.
 
-BOOKING AND PAYMENT RULES
-- Four starting courts; PHP 300 per court per hour; open 9 AM to midnight.
-- Duration is a whole number of hours. No bookings extend past midnight.
-- At 11 PM, only one remaining hour is offered; it ends the next day at 12 AM.
-- No past bookings or bookings on archived/blocked courts.
-- Overlapping ranges are rejected. Adjacent bookings are allowed.
-- Client creation and booking creation happen in one database transaction.
-- A new reservation needs verified full payment matching rate times duration.
-- Payments use GCash QRPH or Bank QRPH outside this website.
-- A payment reference cannot be reused for another booking.
-- Existing payment records may be corrected to unpaid/refunded as requested.
-  This does not automatically cancel a booking or perform a refund.
-- Changing start time, court or duration updates the displayed amount and
-  clears the verification checkbox so payment can be checked again.
-- Changing a paid reservation's duration requires the new full amount.
-  The website does not collect additional money or issue money back.
-- Cancel/delete booking releases its time and retains its payment/history.
-- A database lock and transaction protect simultaneous booking submissions.
+BOOKING FEEDBACK AND PAYMENT
+Failures open a popup above the booking form with Edit and try again or
+Discard form. Safe entries are retained; payment verification must be checked
+again after an unsuccessful save. Success also opens a confirmation popup.
+New bookings and reschedules require manually verified full payment.
+For an existing standalone record, correcting payment to Unpaid requires
+amount 0 and clears its payment reference/date/method. Refunds use the
+cancellation flow. Staff cannot change a reservation's schedule.
+The server checks overlap, maintenance, dates, duration, payment references,
+roles and CSRF tokens. A transaction and shared database lock protect saves.
+There is no payment API. Payments use real GCash QRPH or Bank QRPH outside
+the app. Add the real venue QR as img/qrph.png when available.
 
-PERMISSIONS AND HISTORY
-Admin manages resources and Staff accounts, reschedules/resizes bookings,
-cancels bookings and edits payment details.
-Staff views resources, creates/cancels bookings, edits payment details,
-edits/deletes clients and edits only their own profile.
-Both can view reports. New clients are added only while making a booking.
-Unused clients/courts/Staff may be deleted. Referenced ones are archived
-or deactivated. Cancel/reschedule future bookings before court maintenance.
-MWF/TTH are account labels rather than weekday login restrictions.
-Sessions expire after 30 minutes without activity.
-
-MERCHANT QRPH IMAGE
-Put the venue's real merchant QR image in img/qrph.png when supplied.
-The form displays it automatically. A missing image is clearly identified.
-There is no fake QR or payment gateway.
-
-INCLUDED WEEK 1 REFERENCES
-Original logos and theme, original database tables/views, Week 1 notes,
-wireframes and design reference PDFs are retained in this package.
-The old disabled HTML pages and duplicate mockups were replaced by PHP.
-The current README and FILE-GUIDE take priority over historical Week 1 notes.
-
-VERIFICATION
-The merged version was tested using PHP 8.3, MariaDB 10.11 and a browser.
-Login/logout, CRUD, profile changes, reports and server role checks passed.
-Duration tests covered price calculation, stored end times, overlaps,
-adjacent bookings, resize conflicts, insufficient payment and midnight.
-Existing one-hour records stayed compatible. The filter controls' heights
-and alignment and sidebar font consistency were checked in the browser.
-Desktop and mobile layouts were visually inspected.
-Windows XAMPP still uses your own local settings and database accounts.
+FILES
+All 11 PHP files, style.css, script.js, pikolbook.sql and notes are in this
+folder. Only images are in img/. No framework, build process or external API.
+FILE-GUIDE.txt explains each file and the booking/cancellation code flow.
+Original Week 1 reference PDFs, notes and logos are retained.

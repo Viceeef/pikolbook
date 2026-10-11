@@ -11,7 +11,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id && !one("SELECT id FROM users WHERE id=? AND role='staff'", 'i', [$id])) {
             throw new Exception('Staff account not found.');
         }
-        if (($_POST['action'] ?? '') === 'delete') {
+        if (($_POST['action'] ?? '') === 'reset_password') {
+            $current = one('SELECT password_hash FROM users WHERE id=?', 'i', [$user['id']]);
+            if (!password_verify($_POST['current_password'] ?? '', $current['password_hash'])) {
+                throw new Exception('Your Admin password is incorrect.');
+            }
+            $new_password = $_POST['new_password'] ?? '';
+            if (!$id || strlen($new_password) < 8 || strlen($new_password) > 72 || $new_password !== ($_POST['confirm_password'] ?? '')) {
+                throw new Exception('Enter matching passwords of 8–72 characters.');
+            }
+            query('UPDATE users SET password_hash=? WHERE id=?', 'si', [password_hash($new_password, PASSWORD_DEFAULT), $id]);
+        } elseif (($_POST['action'] ?? '') === 'delete') {
             if (!$id) {
                 throw new Exception('Choose a staff account.');
             }
@@ -19,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 one('SELECT id FROM bookings WHERE created_by=? OR payment_updated_by=? LIMIT 1', 'ii', [
                     $id,
                     $id,
-                ])
+                ]) || one('SELECT booking_id FROM booking_details WHERE handled_by=? LIMIT 1', 'i', [$id])
             ) {
                 query('UPDATE users SET is_active=0 WHERE id=?', 'i', [$id]);
             } else {
@@ -33,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = email_input(true);
             $phone = text_input('phone', 30);
             $password = $_POST['password'] ?? '';
-            if (strlen($password) < 8 || strlen($password) > 72) {
+            if (!$id && (strlen($password) < 8 || strlen($password) > 72)) {
                 throw new Exception('Password must contain 8–72 characters.');
             }
             $active = ($_POST['is_active'] ?? '1') === '1' ? 1 : 0;
@@ -45,12 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $active,
                     $id,
                 ]);
-                if ($password !== '') {
-                    query('UPDATE users SET password_hash=? WHERE id=?', 'si', [
-                        password_hash($password, PASSWORD_DEFAULT),
-                        $id,
-                    ]);
-                }
+
             } else {
                 query(
                     "INSERT INTO users(full_name,email,phone,password_hash,role,is_active) VALUES(?,?,?,?,'staff',?)",
@@ -63,6 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         notice('Staff account updated.');
         go('staff.php');
     } catch (Exception $error) {
+        if (($_POST['action'] ?? '') === 'reset_password') {
+            end_write(false);
+            $_SESSION['action_error'] = error_message($error);
+            go('staff.php?reset=' . $id);
+        }
         fail_form($error, 'staff.php', $id);
     }
 }
@@ -86,7 +96,7 @@ page_header($title, $page, $user);
     ? 'Active'
     : 'Deactivated' ?></td><td><div class="row-actions"><a class="button light" href="staff.php?edit=<?= (int) $account[
     'id'
-] ?>"><?= action_icon('edit') ?>Edit</a><?php delete_button(
+] ?>"><?= action_icon('edit') ?>Edit</a><a class="button light" href="staff.php?reset=<?= (int) $account['id'] ?>">Reset password</a><?php delete_button(
     'staff.php',
     $account['id'],
     'Delete this staff account? Referenced accounts will be deactivated to preserve history.',
@@ -104,14 +114,12 @@ page_header($title, $page, $user);
 field('Full name', 'full_name', fv('full_name', $edit['full_name'] ?? ''));
 field('Email', 'email', fv('email', $edit['email'] ?? ''), 'email', true, 150);
 field('Phone', 'phone', fv('phone', $edit['phone'] ?? ''), 'tel', true, 30);
-field(
-    'Password (8–72 characters)',
-    'password',
-    '',
-    'password',
-    true,
-    72,
-);
+if (!$edit) {
+    field('Initial password (8–72 characters)', 'password', '', 'password', true, 72);
+} else {
+    echo '<p class="note">Staff can change their own password in Edit profile. Saving these details keeps their password.</p>';
+}
+
 ?>
 <div class="field"><label for="is_active">Status<?= required_mark() ?></label><select id="is_active" name="is_active" required><option value="1">Active</option><option value="0" <?= fv(
     'is_active',
@@ -122,4 +130,11 @@ field(
 <div class="actions"><button type="button" class="light" data-close="staff-dialog"><?= action_icon(
     'cancel',
 ) ?>Cancel</button><button>Save staff</button></div></form></dialog>
-<?php page_footer(); ?>
+<?php
+$reset = !empty($_GET['reset']) ? one("SELECT * FROM users WHERE id=? AND role='staff'", 'i', [(int) $_GET['reset']]) : null;
+if ($reset): ?>
+<dialog id="reset-password-dialog" data-auto-open><h2>Reset staff password</h2><p><?= e($reset['full_name']) ?> · <?= e($reset['email']) ?></p>
+<form action="staff.php" method="post"><?php csrf_field(); ?><input type="hidden" name="action" value="reset_password"><input type="hidden" name="id" value="<?= (int) $reset['id'] ?>">
+<?php field('Your Admin password', 'current_password', '', 'password', true, 72); field('New staff password', 'new_password', '', 'password', true, 72); field('Confirm new password', 'confirm_password', '', 'password', true, 72); ?>
+<div class="actions"><a class="button light" href="staff.php">Cancel</a><button>Reset password</button></div></form></dialog>
+<?php endif; page_footer(); ?>

@@ -1,211 +1,139 @@
-PIKOLBOOK FILE GUIDE - SIMPLE CODE DEFENSE NOTES
+PIKOLBOOK FILE GUIDE - SIMPLE DEFENSE NOTES
 
-We use 11 PHP files. Each page contains its own form processing and HTML.
-The other three PHP files share settings, common functions and layout.
-The code uses ordinary PHP and mysqli; there is no framework or build step.
-
-EACH PHP FILE
+The app uses 11 PHP files. Each page contains its form processing and HTML.
+There are no controller, API, model, asset or framework folders.
 
 index.php
-  The site's first page. Shows the email/password login form, checks the
-  account in MySQL and verifies the password with password_verify().
-  Successful login creates a PHP session and opens Dashboard. If the user
-  is already logged in, it goes straight to Dashboard. The sidebar's POST
-  logout form also comes here and clears the session.
+  Checks email and password against users using password_verify().
+  Starts the signed-in session, redirects to Dashboard, and handles logout.
+  Loads script.js so the show/hide password button works. No sign-up page.
 
 config.php
-  Holds the database host, port, name, username and password, Manila time
-  zone and merchant QR image path. It connects to MySQL using mysqli.
-  It also contains query(), rows() and one(), which run prepared SQL.
-  query() runs a statement; rows() reads several records; one() reads one.
-  This is the only place to edit database connection settings.
+  Database settings and mysqli connection. Sets Philippine time for both
+  PHP and MySQL. Holds merchant QR settings and query(), rows(), one().
+  Prepared statements pass user values separately from SQL instructions.
 
 functions.php
-  Common PHP helpers used by the pages: login/role checks, form tokens,
-  safe text output, input validation, dates, prices, time labels and booking
-  availability. It also starts/ends transactions and the shared write lock.
-  Keeping these here prevents every page from repeating the same checks.
+  Common login/role checks, form tokens, input validation, safe HTML output,
+  dates and money. begin_write()/end_write() manage the lock and transaction.
+  available() checks the full booking range against bookings and maintenance.
+  repeat_dates() makes the weekly date list, stopping at month end.
+  refund_quote() calculates the 100%, 50% or 0% refund using time until start.
+  cancellation_targets() selects one booking or future dates in a block.
+  net_received() subtracts recorded refunds from a paid booking's amount.
+  calendar_slot() uses loaded bookings/maintenance to label each hourly cell.
+  fail_form() restores safe booking entries after failure, excluding passwords.
 
 layout.php
-  Shared HTML in three ordinary PHP functions:
-    page_header()   Outputs the sidebar, menu, top bar and status messages.
-    page_footer()   Closes the layout and adds the delete confirmation popup.
-    booking_modal() Outputs the booking popup used on Dashboard and Bookings.
-  The sidebar includes Staff management only for Admin and Edit profile
-  for Staff. Server checks still enforce the permissions separately.
-  The shared booking popup avoids maintaining two different booking forms.
-
-dashboard.php
-  Reads current counts and today's schedule from the database. Displays
-  overview cards and the quick schedule. Calls booking_modal() for New
-  booking. That form submits to bookings.php, which does the saving.
-
-resources.php
-  Lists courts and their availability. On POST it checks that the user is
-  Admin, then creates/edits/deletes a court or changes maintenance.
-  Its HTML includes the Admin resource popup. Staff gets a view-only page.
-  Referenced courts are archived; unused courts can be removed.
+  Shared HTML functions:
+  page_header() displays the menu and top bar for the signed-in user's role.
+  page_footer() closes the page and displays confirmation/feedback dialogs.
+  booking_modal() outputs the booking form and foreground error popup.
+  cancellation_modal() outputs the cancellation review or refund form.
+  booking_calendar() displays the month and selected day's court/time table.
+  Keeping these together avoids extra PHP files for each popup.
 
 bookings.php
-  The main booking page and all booking form processing.
-  GET displays records, filters and the New/Edit booking popup.
-  POST validates and creates/edits/cancels/deletes bookings. It also records
-  payment details. New clients are inserted here only with a valid booking.
-  The booking and client are saved together inside one transaction.
-  Admin can change the schedule/duration; Staff can edit payment details.
-  Deleting a booking cancels it while preserving history.
+  Checks POST actions and saves bookings, cancellations, completion or refunds.
+  For a new monthly block it checks every date, verifies total payment, then
+  creates all the bookings inside one transaction. A failure rolls back all.
+  Client creation happens in the same transaction, so failed bookings do not
+  leave a new client behind. Existing clients are selected from the database.
+  Admin may reschedule future bookings; Staff cannot change their schedule.
+  GET displays List/Calendar views, filters, booking records and action forms.
+
+resources.php
+  Court search/list and Admin create/edit/archive/delete forms.
+  Admin sets maintenance start/end times; overlapping future reservations
+  must be cancelled or rescheduled first. Staff has view-only access.
 
 clients.php
-  Lists and searches clients. Contains the edit popup and the POST code
-  to edit or delete a client. It rejects creating standalone clients.
-  Referenced clients are archived rather than removed from history.
+  Client search/list, edit and delete. New clients are added during booking.
+  Clients used by bookings are archived to preserve booking history.
 
 staff.php
-  Admin-only Staff directory, create/edit popup and POST form processing.
-  Creates accounts with hashed passwords, updates Staff data/passwords and
-  removes unused accounts or deactivates referenced accounts.
-  Staff cannot access the page or submit changes to it.
-
-reports.php
-  Reads booking records and calculates reports for the selected date range.
-  Groups period totals under expandable years, listing all twelve months.
-  Also counts bookings by court and client, including cancellations.
-  Received-payment totals exclude unpaid/refunded records. Print is handled
-  by a small JavaScript helper and the print rules in style.css.
+  Admin-only Staff search/list, creation, editing and deletion/deactivation.
+  Phone is stored in users.phone. Editing details does not alter passwords.
+  A separate password reset form requires the Admin's own current password.
+  Staff referenced by bookings or refunds is deactivated instead of deleted.
 
 profile.php
-  Shows and updates the logged-in user's own name, email, phone and optional
-  new password. Requires the current password before saving. Uses the user
-  ID from the PHP session, so a submitted ID cannot change another account.
+  Lets the current user edit their own name, email, phone and optional password.
+  Requires their current password and matching new passwords if changing it.
+  Uses the session's user ID, so a posted ID cannot edit somebody else.
 
-OTHER APPLICATION FILES
+reports.php
+  Three report tabs: Periodic, per resource and per client.
+  Only Periodic has month/year filters. Reports count individual booked dates.
+  Net received subtracts actual recorded refunds; pending refunds remain visible.
+  Data comes from MySQL and calculations use loops. No analytics service/API.
+
+dashboard.php
+  Today's schedule, bookings, courts in service, active clients and net receipts.
+  Net receipts today subtracts refunds paid today from payments received today.
+  Reuses the same New booking popup and saves through bookings.php.
 
 style.css
-  All appearance: green colors, sidebar, forms, tables, popups, responsive
-  layouts and print styles. It also aligns the filter buttons with inputs
-  and keeps selected/unselected sidebar text the same size and weight.
+  Your teammate's green theme, forms, icons, tables, popups and responsive styles.
+  Adds ordinary CSS classes for the calendar and keeps sidebar font sizes and
+  weights consistent. Printing hides navigation and prints the selected report.
 
 script.js
-  Small browser interactions: open/close popups, confirm deletions, search
-  table rows and existing clients, switch new/existing client fields,
-  preview booking duration/end time/price and print reports.
-  It does not store accounts/bookings in browser storage. PHP saves to MySQL.
-  Browser validation helps the user; PHP repeats the important checks.
+  Handles popup buttons, password visibility, confirmation, client search,
+  live table filters, report tabs, required fields, recurring date/price preview,
+  calendar slot selection and print. Uses plain JavaScript and the existing DOM.
+  No fetch calls, external API or database credentials are used in JavaScript.
+  PHP validates the submitted values again; browser checks alone are not trusted.
 
 pikolbook.sql
-  Creates the database, five tables, analytics views and four starting courts.
-  Tables: users, clients, courts, court_blocks and bookings.
-  Seeds admin@pikolbook.com, mwf@pikolbook.com and tth@pikolbook.com.
-  All use phpadmin, stored as a bcrypt hash rather than plain text.
-  Reimporting resets these assigned credentials while keeping booking history.
-  This update needs no new database columns: bookings already has start_time,
-  end_time and total_amount, which can represent longer reservations.
+  Creates the database, tables, report views, missing courts and assigned accounts.
+  Can be imported into an existing database without deleting booking/client data.
+  Six tables:
+    users           Admin/Staff accounts, hashed passwords, phone, role, status.
+    clients         Customer name, email, phone and active status.
+    courts          Court name, hourly rate, hours and active status.
+    court_blocks    Maintenance periods. These are not paid monthly bookings.
+    bookings        One reservation for one date, including its payment share.
+    booking_details Optional monthly-block code and cancellation/refund history.
+  booking_details uses booking_id to connect to bookings. It avoids adding
+  repeated payment/refund text into booking notes or changing old records.
+  Reimport preserves existing passwords, phones, bookings, clients and court rates.
 
-img/logo.png
-  The original Pikolbook logo used in the sidebar.
-
-img/login_logo.png
-  The original logo displayed on the login screen.
-
-img/qrph.png (optional; not supplied)
-  The venue's real merchant payment QR image. Add it when available.
-
-REFERENCE FILES - NOT EXECUTED BY PHP
+img/logo.png and img/login_logo.png
+  Original sidebar and login logos.
+img/qrph.png (optional)
+  The venue's real merchant QR image; provide it before using the QR display.
 
 README.txt
-  Installation, upgrade steps, assigned accounts, settings and current rules.
+  Installation, required SQL import, accounts, policy, workflows and limitations.
+Week-1-Notes.txt and the two Week-1 PDFs
+  Historical reference material. Current README/code take priority.
 
-FILE-GUIDE.txt
-  This explanation of the current files, merges and code flow.
+MONTHLY BLOCK EXAMPLE
+1. Staff selects a client, Court 1, the month's first Tuesday, 5 PM and 2 hours.
+2. repeat_dates() produces every Tuesday from that first date until month end.
+3. PHP calls available() for every date and calculates hours x rate x dates.
+4. PHP verifies the full payment and checks that its reference is not reused.
+5. A loop inserts one booking per date, each with that date's payment share.
+6. booking_details links the bookings with the same randomly generated code.
+7. Commit saves the whole block. Any exception rolls back the entire submission.
 
-Week-1-Notes.txt
-  The original Week 1 README and planning documents, kept as historical
-  context. Their preview status, old paths and tentative rules may differ
-  from the current application. Use the current README for actual behavior.
+CANCELLATION EXAMPLE
+1. Open Cancel and choose one date or the block's future confirmed dates.
+2. refund_quote() compares each start time with the current Philippine time.
+3. The form shows each refund and the total before confirmation.
+4. The server recalculates on submission. A changed amount requires a new review.
+5. It marks bookings cancelled and stores refund_due, the reason and action user.
+6. Staff sends the refund outside the app, then records its reference and amount.
+7. Reports subtract refunded_amount only after that refund has been recorded.
 
-Week-1-Wireframes.pdf
-  The original supplied page-layout reference.
+OVERLAP RULE
+Existing start < requested end AND existing end > requested start.
+A 5-7 PM reservation blocks 6-8 PM, but allows 7-9 PM.
+00:00 end time means midnight on the next date. Past and cancelled records are
+handled separately: past slots cannot be booked; cancelled reservations free slots.
 
-Week-1-Design-Reference.pdf
-  The original design/theme reference.
-
-WHAT WAS MERGED
-
-Old files                             Current file
-index.php + login.php + logout.php    index.php
-config.php + db.php                   config.php
-header.php + footer.php +
-  booking-modal.php                   layout.php
-resources.php + resource-save.php     resources.php
-clients.php + client-save.php         clients.php
-staff.php + staff-save.php            staff.php
-profile.php + profile-save.php        profile.php
-bookings.php + booking-save.php +
-  booking-action.php                  bookings.php
-
-We kept separate pages for separate tabs because their purposes are clear.
-Merging all tabs into one huge file would make the sections harder to find.
-We kept common helpers/layout separate because several pages reuse them.
-These files are part of the application's behavior, not extra mockup files.
-
-HOW A BOOKING WORKS - EXAMPLE TO EXPLAIN
-
-1. Staff opens the New booking popup on Dashboard or Bookings.
-2. The shared HTML form in layout.php collects client, court, date,
-   start time, duration and manually verified payment information.
-3. script.js previews the end time and price, e.g. 10 AM + 3 hours
-   ends at 1 PM and costs PHP 900 at PHP 300 per hour.
-4. The form submits POST to bookings.php.
-5. PHP checks the login, form token, required inputs, allowed duration,
-   payment and full time range. It checks availability again in MySQL.
-6. The write lock prevents another submission from checking/saving at the
-   same time. The transaction saves the new client and booking together.
-7. On success, PHP redirects and reloads the data from MySQL. On failure,
-   it rolls back changes, shows an error and reopens the form.
-
-DURATION AND OVERLAP RULES
-
-Duration is a whole number of hours, from 1 to the hours remaining before
-midnight. For example, 9 AM allows up to 15 hours; 11 PM allows one hour.
-End time = start time + duration. Total = hourly rate x duration.
-A stored end_time of 00:00:00 means midnight on the next day.
-
-Two ranges overlap when:
-  existing start < requested end AND existing end > requested start.
-
-Example: 10 AM to 1 PM blocks 11 AM to 12 PM and 9 AM to 11 AM.
-It allows 1 PM to 3 PM because the bookings only meet at their boundary.
-Cancelled bookings do not block a time range.
-
-WHAT THE MAIN HELPERS MEAN
-
-signed_in()         Finds the session's active user; redirects if logged out.
-admin_only()        Refuses a Staff request for an Admin action.
-check_post()        Requires a POST request with the correct form token.
-csrf_field()        Adds that form token to a form.
-e()                Escapes displayed values so text is not executed as HTML.
-text_input()       Checks required text and maximum length.
-email_input()      Checks email syntax.
-valid_date()       Checks that the date really exists.
-field()            Prints a labeled input so repeated fields stay consistent.
-fv()               Restores safe form values after a validation error.
-begin_write()      Obtains the write lock and starts a transaction.
-end_write()        Commits or rolls back, then releases the lock.
-available()        Checks the entire requested range, blocks and existing bookings.
-booking_end()      Turns date/time into the correct end, including midnight.
-booking_hours()    Calculates hours from a stored booking's start/end.
-slot_label()       Displays the actual stored start and end times.
-money()            Formats a price for display.
-notice()           Saves a message to display after a redirect.
-go()               Redirects the browser and stops the current request.
-fail_form()        Rolls back and returns to the form with an error message.
-
-DEFENSE READING ORDER
-1. Start with index.php and pikolbook.sql for accounts.
-2. Read config.php for the connection and prepared queries.
-3. Read functions.php for the repeated checks and booking rules.
-4. Read layout.php for shared HTML and the booking form.
-5. Read bookings.php: its POST processing is above its display section.
-6. Read resources.php, clients.php, staff.php and profile.php similarly.
-7. Read dashboard.php and reports.php for database-driven displays.
-8. Read script.js and style.css for interaction and appearance.
+READING ORDER
+index.php -> config.php -> functions.php -> layout.php -> bookings.php.
+Then read staff.php/profile.php, resources.php, clients.php, reports.php,
+dashboard.php and finally script.js/style.css for browser behavior and design.

@@ -52,8 +52,9 @@ function signed_in()
         go('index.php');
     }
     $user = one('SELECT * FROM users WHERE id = ? AND is_active = 1', 'i', [$_SESSION['user_id']]);
-    if (!$user) {
-        unset($_SESSION['user_id']);
+    if (!$user || (!empty($_SESSION['auth_hash']) && $_SESSION['auth_hash'] !== $user['password_hash'])) {
+        unset($_SESSION['user_id'], $_SESSION['auth_hash']);
+        notice('Please log in again. Your account may have been updated.');
         go('index.php');
     }
     $_SESSION['last_activity'] = time();
@@ -265,7 +266,92 @@ function fail_form($error, $path, $id = 0)
         $_SESSION['form_draft']['csrf'],
         $_SESSION['form_draft']['password'],
         $_SESSION['form_draft']['verified'],
+        $_SESSION['form_draft']['current_password'],
+        $_SESSION['form_draft']['new_password'],
+        $_SESSION['form_draft']['confirm_password'],
     );
     $_SESSION['form_error'] = error_message($error);
     go($path . ($id ? '?edit=' . $id : '?new=1'));
+}
+
+// Read optional monthly-block and cancellation details with the booking.
+function booking_record($id)
+{
+    return one('SELECT b.*, d.series_code, d.cancelled_at, d.cancel_reason,
+        d.refund_due, d.refunded_amount, d.refunded_at, d.refund_reference
+        FROM bookings b LEFT JOIN booking_details d ON d.booking_id=b.id WHERE b.id=?', 'i', [$id]);
+}
+function repeat_dates($first, $repeat)
+{
+    if (!valid_date($first)) {
+        throw new Exception('Choose a valid booking date.');
+    }
+    if (!in_array($repeat, ['once', 'monthly'], true)) {
+        throw new Exception('Choose a valid booking type.');
+    }
+    $dates = [$first];
+    if ($repeat === 'monthly') {
+        $next = date('Y-m-d', strtotime($first . ' +7 days'));
+        while (substr($next, 0, 7) === substr($first, 0, 7)) {
+            $dates[] = $next;
+            $next = date('Y-m-d', strtotime($next . ' +7 days'));
+        }
+    }
+    return $dates;
+}
+function refund_quote($booking, $now = null)
+{
+    $now = $now ?? time();
+    $hours = (strtotime($booking['booking_date'] . ' ' . $booking['start_time']) - $now) / 3600;
+    $percent = $hours >= 24 ? 100 : ($hours >= 3 ? 50 : 0);
+    $paid = $booking['payment_status'] === 'paid' ? (float) $booking['amount_paid'] : 0;
+    return ['percent' => $percent, 'amount' => round($paid * $percent / 100, 2)];
+}
+function net_received($booking)
+{
+    if ($booking['payment_status'] !== 'paid') return 0;
+    return max(0, (float) $booking['amount_paid'] - (float) ($booking['refunded_amount'] ?? 0));
+}
+// Each recurring date is a real booking with its own share of the payment.
+function cancellation_targets($booking, $scope)
+{
+    if ($scope === 'series' && !empty($booking['series_code'])) {
+        return rows("SELECT b.* FROM bookings b JOIN booking_details d ON d.booking_id=b.id
+            WHERE d.series_code=? AND b.status='confirmed' AND CONCAT(b.booking_date,' ',b.start_time)>?
+            ORDER BY b.booking_date", 'ss', [$booking['series_code'], date('Y-m-d H:i:s')]);
+    }
+    return [$booking];
+}
+// Calendar availability uses already-loaded records, so it does not query per cell.
+function calendar_slot($court, $date, $hour, $bookings, $blocks)
+{
+    $start = $date . ' ' . sprintf('%02d:00:00', $hour);
+    $end = date('Y-m-d H:i:s', strtotime($start . ' +1 hour'));
+    foreach ($bookings as $b) {
+        if ((int) $b['court_id'] === (int) $court['id'] && $b['status'] !== 'cancelled' &&
+            $b['booking_date'] . ' ' . $b['start_time'] < $end && booking_end($b) > $start) {
+            return ['state' => 'booked', 'label' => $b['client_name'], 'id' => $b['id']];
+        }
+    }
+    if (!$court['is_active']) return ['state' => 'closed', 'label' => 'Archived'];
+    foreach ($blocks as $block) {
+        if ((int) $block['court_id'] === (int) $court['id'] && $block['start_at'] < $end && $block['end_at'] > $start) {
+            return ['state' => 'maintenance', 'label' => 'Maintenance'];
+        }
+    }
+    $open = $date . ' ' . $court['opening_time'];
+    $close = $date . ' ' . $court['closing_time'];
+    if ($court['closing_time'] <= $court['opening_time']) $close = date('Y-m-d H:i:s', strtotime($close . ' +1 day'));
+    if ($start < $open || $end > $close) return ['state' => 'closed', 'label' => 'Closed'];
+    if ($start <= date('Y-m-d H:i:s')) return ['state' => 'past', 'label' => 'Past'];
+    return ['state' => 'free', 'label' => 'Available'];
+}
+
+function payment_label($booking)
+{
+    $refunded = (float) ($booking['refunded_amount'] ?? 0);
+    $due = (float) ($booking['refund_due'] ?? 0);
+    if ($due > $refunded) return 'Refund pending';
+    if ($refunded > 0) return $refunded >= (float) $booking['amount_paid'] ? 'Refunded' : 'Partially refunded';
+    return ucfirst($booking['payment_status']);
 }

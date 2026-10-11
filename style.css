@@ -166,7 +166,7 @@ nav span {
 nav .active {
     background-color: var(--color-accent);
     color: var(--color-ink);
-    font-weight: 650;
+    font-weight: 500;
 }
 
 nav a:hover {
@@ -284,11 +284,12 @@ table {
 }
 
 #booking-records {
+    min-width: 1020px;
     table-layout: fixed;
 }
 
 #booking-records .booking-id-column {
-    width: 5%;
+    width: 8%;
 }
 
 #booking-records .booking-time-column {
@@ -312,7 +313,7 @@ table {
 }
 
 #booking-records .booking-actions-column {
-    width: 22%;
+    width: 19%;
 }
 
 #booking-records th,
@@ -968,3 +969,33 @@ summary {
     white-space: nowrap;
     margin: 0;
 }
+
+/* Calendar and feedback: ordinary classes, no calendar library. */
+.view-switch { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 20px; }
+.calendar-scroll { overflow-x: auto; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); min-width: 770px; gap: 6px; }
+.calendar-weekday { text-align: center; font-weight: 600; padding: 8px; }
+.calendar-day { display: flex; flex-direction: column; gap: 5px; min-height: 118px; padding: 10px; border: 1px solid #dde4dd; border-radius: 8px; text-decoration: none; background: #fff; font-size: 12px; }
+.calendar-day:hover { background: #f1f6e9; color: #20392f; }
+.calendar-selected { border: 2px solid #355c3f; background: #e7f0dc; }
+.calendar-booked { color: #755313; }
+.calendar-free { color: #235533; }
+.calendar-maintenance { color: #835454; }
+.slot-free { background: #e7f0dc; color: #235533; }
+.slot-booked { color: #755313; font-size: 13px; }
+.slot-maintenance { color: #835454; }
+.slot-past, .slot-closed { color: #64736b; }
+.day-table { min-width: 680px; }
+button:disabled { opacity: .6; cursor: not-allowed; }
+@media (max-width: 800px) {
+    .calendar-day { min-height: 108px; }
+}
+@media print {
+    .view-switch, .actions, .report-choices { display: none !important; }
+    .report-view[hidden] { display: none !important; }
+}
+
+.mobile-note { display: none; }
+@media (max-width: 800px) { .mobile-note { display: block; color: #64736b; font-size: 13px; } }
+
+.monthly-tag { display: inline-block; padding: 3px 6px; border-radius: 8px; background: #e7f0dc; color: #235533; font-size: 11px; white-space: nowrap; }

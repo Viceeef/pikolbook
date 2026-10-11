@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($account && password_verify($_POST['password'] ?? '', $account['password_hash'])) {
         session_regenerate_id(true);
         $_SESSION['user_id'] = $account['id'];
+        $_SESSION['auth_hash'] = $account['password_hash'];
         $_SESSION['last_activity'] = time();
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
         go('dashboard.php');
@@ -35,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Login | Pikolbook</title><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Login | Pikolbook</title><link rel="stylesheet" href="style.css"><script src="script.js" defer></script></head>
 <body>
 <main class="login-layout">
     <section class="login-brand"><img src="img/login_logo.png" alt="Pikolbook"><h1>Book a court.<br>Enjoy the game.</h1><p>Your bookings, clients and daily schedule in one place.</p></section>

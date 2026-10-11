@@ -226,28 +226,35 @@ if (printButton) {
     });
 }
 
-/* Show the end time and price before the user saves a booking. */
+/* Booking feedback and price preview. The server checks every value again. */
 const bookingForm = document.getElementById('booking-form');
 if (bookingForm) {
-    const validationError = document.getElementById('booking-validation-error');
-    bookingForm.addEventListener(
-        'invalid',
-        function () {
-            validationError.textContent = 'Please correct the highlighted fields and complete all required fields.';
-            validationError.hidden = false;
-        },
-        true,
-    );
-    bookingForm.addEventListener('input', function () {
-        validationError.hidden = true;
+    const bookingDialog = document.getElementById('booking-dialog');
+    const errorDialog = document.getElementById('booking-error-dialog');
+    let invalidInput = null;
+    bookingForm.addEventListener('invalid', function (event) {
+        event.preventDefault();
+        invalidInput = invalidInput || event.target;
+        document.getElementById('booking-error-text').textContent = 'Please complete the required fields and check your entries. ' + invalidInput.validationMessage;
+        if (!errorDialog.open) errorDialog.showModal();
+    }, true);
+    document.getElementById('retry-booking').addEventListener('click', function () {
+        errorDialog.close();
+        if (!bookingDialog.open) bookingDialog.showModal();
+        if (invalidInput) invalidInput.focus();
+        invalidInput = null;
     });
-    bookingForm.addEventListener('change', function () {
-        validationError.hidden = true;
+    document.getElementById('discard-booking').addEventListener('click', function () {
+        // Reload without the failed edit/new query so no previous draft is reopened.
+        location.href = location.pathname;
     });
     const start = document.getElementById('hour');
     const duration = document.getElementById('duration');
     const court = document.getElementById('court_id');
+    const dateInput = document.getElementById('date');
+    const repeat = document.getElementById('repeat');
     const summary = document.getElementById('booking-summary');
+    const repeatSummary = document.getElementById('repeat-summary');
     const received = document.getElementById('amount_paid');
     const verified = bookingForm.querySelector('input[name="verified"]');
     function hourText(hour) {
@@ -256,35 +263,70 @@ if (bookingForm) {
     }
     function updateSummary(changed) {
         const startHour = Number(start.value);
-        // Do not offer a duration that would end after closing time.
         Array.from(duration.options).forEach(function (option) {
             option.disabled = startHour + Number(option.value) > 24;
         });
-        if (startHour + Number(duration.value) > 24) {
-            duration.value = String(24 - startHour);
-        }
+        if (startHour + Number(duration.value) > 24) duration.value = String(24 - startHour);
         const hours = Number(duration.value);
         const selectedCourt = court.options[court.selectedIndex];
-        const rate = selectedCourt ? Number(selectedCourt.dataset.rate) : 300;
-        const total = hours * rate;
-        summary.textContent =
-            hourText(startHour) +
-            ' – ' +
-            hourText(startHour + hours) +
-            ' · ' +
-            hours +
-            (hours === 1 ? ' hour' : ' hours') +
-            ' · Total: ₱' +
-            total.toFixed(2);
+        const rate = selectedCourt ? Number(selectedCourt.dataset.rate) : 0;
+        const dates = [];
+        if (dateInput.value) {
+            const day = new Date(dateInput.value + 'T12:00:00');
+            const month = day.getMonth();
+            while (!isNaN(day.getTime()) && day.getMonth() === month) {
+                dates.push(day.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }));
+                if (!repeat || repeat.value !== 'monthly') break;
+                day.setDate(day.getDate() + 7);
+            }
+        }
+        const sameSchedule = bookingForm.dataset.edit === '1' &&
+            court.value === bookingForm.dataset.originalCourt && dateInput.value === bookingForm.dataset.originalDate &&
+            start.value === bookingForm.dataset.originalHour && duration.value === bookingForm.dataset.originalDuration;
+        const perDate = sameSchedule ? Number(bookingForm.dataset.total) : hours * rate;
+        const total = perDate * dates.length;
+        summary.textContent = hourText(startHour) + ' – ' + hourText(startHour + hours) + ' · ' + hours +
+            (hours === 1 ? ' hour per date' : ' hours per date') + ' · Total: ₱' + total.toFixed(2);
+        repeatSummary.textContent = repeat && repeat.value === 'monthly' ?
+            dates.length + ' dates: ' + dates.join(', ') + '. ₱' + perDate.toFixed(2) + ' per date. All dates must be available.' : '';
         if (changed) {
             received.value = total.toFixed(2);
             verified.checked = false;
         }
     }
-    [start, duration, court].forEach(function (input) {
-        input.addEventListener('change', function () {
-            updateSummary(true);
+    [start, duration, court, dateInput, repeat].filter(Boolean).forEach(function (input) {
+        input.addEventListener('change', function () { updateSummary(true); });
+    });
+    const paymentStatus = document.getElementById('payment_status');
+    function paymentFields() {
+        const unpaid = paymentStatus.value === 'unpaid';
+        ['payment_method','payment_reference','paid_at'].forEach(function (id) {
+            const input = document.getElementById(id);
+            input.required = !unpaid;
+            input.disabled = unpaid;
         });
+        verified.required = !unpaid;
+        if (unpaid) { received.value = '0.00'; verified.checked = false; }
+    }
+    paymentStatus.addEventListener('change', paymentFields);
+    paymentFields();
+    if (bookingForm.dataset.sharedPayment === '1') {
+        ['amount_paid','payment_reference','paid_at'].forEach(function (id) { document.getElementById(id).readOnly = true; });
+    }
+    document.querySelectorAll('[data-slot-date]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            dateInput.value = button.dataset.slotDate;
+            start.value = button.dataset.slotHour;
+            court.value = button.dataset.slotCourt;
+            duration.value = '1';
+            if (repeat) repeat.value = 'once';
+            updateSummary(true);
+            bookingDialog.showModal();
+        });
+    });
+    bookingForm.addEventListener('submit', function () {
+        document.getElementById('save-booking').disabled = true;
+        document.getElementById('save-booking').textContent = 'Saving…';
     });
     updateSummary(false);
 }

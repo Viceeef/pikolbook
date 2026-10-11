@@ -9,8 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = email_input(true);
         $phone = text_input('phone', 30);
         $password = $_POST['new_password'] ?? '';
-        if (strlen($password) < 8 || strlen($password) > 72) {
+        if ($password !== '' && (strlen($password) < 8 || strlen($password) > 72)) {
             throw new Exception('A new password must contain 8–72 characters.');
+        }
+        if ($password !== ($_POST['confirm_password'] ?? '')) {
+            throw new Exception('The new passwords do not match.');
         }
         begin_write();
         $current = one('SELECT * FROM users WHERE id = ?', 'i', [$user['id']]);
@@ -30,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
         end_write(true);
+        $_SESSION['auth_hash'] = one('SELECT password_hash FROM users WHERE id=?', 'i', [$user['id']])['password_hash'];
         session_regenerate_id(true);
         notice('Your profile has been updated.');
     } catch (Exception $error) {
@@ -52,7 +56,8 @@ field('Full name', 'full_name', $user['full_name']);
 field('Email', 'email', $user['email'], 'email', true, 150);
 field('Phone', 'phone', $user['phone'], 'tel', true, 30);
 field('Current password', 'current_password', '', 'password', true, 72);
-field('New password (8–72 characters)', 'new_password', '', 'password', true, 72);
+field('New password (optional, 8–72 characters)', 'new_password', '', 'password', false, 72);
+field('Confirm new password', 'confirm_password', '', 'password', false, 72);
 ?>
 </div><button>Save profile</button></form></section>
 <?php page_footer(); ?>

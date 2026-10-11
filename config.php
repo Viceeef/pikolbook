@@ -15,6 +15,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 try {
     $db = mysqli_connect($db_host, $db_user, $db_password, $db_name, $db_port);
     mysqli_set_charset($db, 'utf8mb4');
+    mysqli_query($db, "SET time_zone = '+08:00'");
 } catch (mysqli_sql_exception $error) {
     http_response_code(503);
     exit('Database unavailable. Start MySQL in XAMPP, import pikolbook.sql, and check config.php.');
