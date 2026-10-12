@@ -193,7 +193,7 @@ $court_id = (int) ($_GET['court_id'] ?? 0);
 $search = trim($_GET['search'] ?? '');
 $status = $_GET['status'] ?? '';
 $bookings = rows(
-    'SELECT b.*,c.name AS court_name,cl.full_name AS client_name,d.series_code,d.cancelled_at,d.cancel_reason,d.refund_due,d.refunded_amount,d.refunded_at,d.refund_reference FROM bookings b JOIN courts c ON c.id=b.court_id JOIN clients cl ON cl.id=b.client_id LEFT JOIN booking_details d ON d.booking_id=b.id ORDER BY b.booking_date DESC,b.start_time',
+    'SELECT b.*,c.name AS court_name,cl.full_name AS client_name,d.series_code,d.cancelled_at,d.cancel_reason,d.refund_due,d.refunded_amount,d.refunded_at,d.refund_reference FROM bookings b JOIN courts c ON c.id=b.court_id JOIN clients cl ON cl.id=b.client_id LEFT JOIN booking_details d ON d.booking_id=b.id ORDER BY b.id DESC',
 );
 $courts = rows('SELECT * FROM courts ORDER BY id');
 $view = ($_GET['view'] ?? '') === 'calendar' ? 'calendar' : 'list';

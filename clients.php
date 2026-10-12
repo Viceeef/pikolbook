@@ -1,7 +1,7 @@
 <?php
 require 'functions.php';
 $user = signed_in();
-// POST: validate and save this page's form. GET: show the page below.
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     check_post();
     $id = (int) ($_POST['id'] ?? 0);

@@ -1,12 +1,12 @@
 <?php
-// XAMPP defaults. Change these only if your local MySQL settings differ.
+
 $db_host = '127.0.0.1';
 $db_port = 3306;
 $db_name = 'pikolbook_db';
 $db_user = 'root';
 $db_password = '';
 
-// Place your actual merchant QRPH image at this path. No payment API is used.
+
 $payment_qr = 'img/qrph.png';
 $merchant_name = 'Pikolbook';
 date_default_timezone_set('Asia/Manila');
@@ -21,8 +21,7 @@ try {
     exit('Database unavailable. Start MySQL in XAMPP, import pikolbook.sql, and check config.php.');
 }
 
-// A small helper keeps prepared statements consistent throughout the project.
-// s = string, i = integer, d = decimal. ... passes each array item as an argument.
+
 function query($sql, $types = '', $values = [])
 {
     global $db;

@@ -1,6 +1,5 @@
 <?php
-// Three shared HTML functions keep every page's design consistent.
-// PHP changes the menu for Admin/Staff. The booking form is shared by two pages.
+
 function page_header($title, $page, $user)
 {
     $links = [
