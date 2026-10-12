@@ -1021,8 +1021,8 @@ summary {
 .calendar-day {
     display: flex;
     flex-direction: column;
-    gap: 7px;
-    min-height: 118px;
+    gap: 6px;
+    min-height: 148px;
     padding: 10px;
     border: 1px solid #dde4dd;
     border-radius: 8px;
@@ -1030,93 +1030,102 @@ summary {
     background: #fff;
     font-size: 12px;
 }
-.calendar-day-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 26px;
-}
-.calendar-day-heading strong {
-    font-size: 18px;
-    line-height: 1;
-}
-.calendar-today {
-    border-color: #52774d;
-}
-.calendar-today-tag {
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: #e7f0dc;
-    color: #235533;
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1.4;
-    text-transform: uppercase;
-}
-.calendar-capacity {
-    display: flex;
-    height: 7px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: #edf0ed;
-}
-.calendar-capacity span {
-    min-width: 0;
-}
-.calendar-capacity-free {
-    background: #8bb84e;
-}
-.calendar-capacity-booked {
-    background: #d6a43e;
-}
-.calendar-capacity-maintenance {
-    background: #c98181;
-}
-.calendar-capacity-unavailable {
-    background: #e5e9e5;
-}
 .calendar-day:hover {
     background: #f1f6e9;
     color: #20392f;
 }
 .calendar-selected {
-    border: 2px solid #355c3f;
+    border-color: #355c3f;
+    box-shadow: inset 0 0 0 1px #355c3f;
     background: #e7f0dc;
 }
 .calendar-booked {
-    color: #755313;
+    color: #963c43;
 }
 .calendar-free {
     color: #235533;
 }
 .calendar-maintenance {
-    color: #835454;
+    color: #806438;
 }
-.calendar-booked i,
-.calendar-free i,
-.calendar-maintenance i {
+.calendar-unavailable {
+    color: #64736b;
+}
+.calendar-legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+.calendar-dot {
     display: inline-block;
-    width: 7px;
-    height: 7px;
-    margin-right: 5px;
+    width: 9px;
+    height: 9px;
+    margin-right: 6px;
     border-radius: 50%;
-    vertical-align: 1px;
 }
-.calendar-booked i {
-    background: #d6a43e;
+.calendar-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
 }
-.calendar-free i {
-    background: #8bb84e;
+.calendar-date-number {
+    font-size: 16px;
 }
-.calendar-maintenance i {
-    background: #c98181;
+.calendar-today {
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: #b6d961;
+    color: #20392f;
+    font-size: 10px;
+    font-weight: 600;
+}
+.calendar-status-bar {
+    display: flex;
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    margin: 3px 0 5px;
+    border-radius: 5px;
+    background: #e2e7e2;
+}
+.calendar-bar-part {
+    display: block;
+    height: 100%;
+}
+.bar-booked {
+    background: #b3575e;
+}
+.bar-free {
+    background: #749553;
+}
+.bar-maintenance {
+    background: #b59766;
+}
+.bar-unavailable {
+    background: #c5cec7;
+}
+.calendar-count {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    line-height: 1.35;
 }
 .slot-free {
     background: #e7f0dc;
     color: #235533;
 }
 .slot-booked {
-    color: #755313;
+    display: inline-block;
+    padding: 5px 8px;
+    border: 1px solid #eed5d8;
+    border-radius: 6px;
+    background: #faeeee;
+    color: #963c43;
     font-size: 13px;
 }
 .slot-maintenance {
@@ -1135,7 +1144,7 @@ button:disabled {
 }
 @media (max-width: 800px) {
     .calendar-day {
-        min-height: 108px;
+        min-height: 148px;
     }
 }
 @media print {

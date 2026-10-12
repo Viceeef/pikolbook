@@ -332,7 +332,7 @@ Edit Profile uses the session user's ID, not a posted target ID. It checks that 
 
 ### Calendar and booking details
 
-PHP loads relevant bookings and maintenance once, then `calendar_slot()` checks those arrays to classify court-hour cells. It does not run a fresh SQL query for every cell. Month navigation and day selection use GET URLs. Available-slot buttons carry date/hour/court `data-*` values; JS uses them to prefill the shared booking form.
+PHP loads relevant bookings and maintenance once, then `calendar_slot()` checks those arrays to classify court-hour cells. It does not run a fresh SQL query for every cell. Each day now has a segmented bar for booked, available, maintenance, and past/closed court-hours. For example, four courts open for 15 hourly slots give 60 court-hours that day; a two-hour reservation occupies two of those hours. The bar counts the selected courts, not individual clients. Cancelled reservations are omitted; completed reservations still show their historical booked hours. Today has a separate badge, while the selected day has a green border. Month navigation and day selection use GET URLs. The Today button preserves the selected court filter. Available-slot buttons carry date/hour/court `data-*` values; JS uses them to prefill the shared booking form.
 
 A booked name links with `info=bookingID`. `booking_details_modal()` reads that exact booking plus names/payment/refund data and displays a read-only summary. Opening the summary does not modify the reservation. Close preserves the selected calendar context.
 
