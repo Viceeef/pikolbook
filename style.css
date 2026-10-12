@@ -12,7 +12,7 @@
     --radius-sm: 8px;
     --radius-md: 12px;
     --shadow-card: 0 2px 8px rgba(32, 57, 47, 0.035);
-    --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
+    --font-sans: 'Inter', 'Segoe UI', Arial, sans-serif;
 }
 
 * {
@@ -160,7 +160,9 @@ nav span {
     font-weight: 500;
     line-height: 1.35;
     text-decoration: none;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
 }
 
 nav .active {
@@ -435,7 +437,9 @@ textarea {
     background-color: var(--color-surface);
     color: var(--color-ink);
     font: inherit;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
 }
 
 input:hover,
@@ -651,7 +655,10 @@ button {
     line-height: 1.35;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        transform 150ms ease;
 }
 
 .button:hover,
@@ -675,7 +682,7 @@ button:active {
 
 .light:hover {
     border-color: var(--color-border-strong);
-    background-color:#e2f8c1;
+    background-color: #e2f8c1;
     color: var(--color-ink);
 }
 
@@ -991,39 +998,154 @@ summary {
     white-space: nowrap;
 }
 
-.view-switch { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 20px; }
-.calendar-scroll { overflow-x: auto; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); min-width: 770px; gap: 6px; }
-.calendar-weekday { text-align: center; font-weight: 600; padding: 8px; }
-.calendar-day { display: flex; flex-direction: column; gap: 5px; min-height: 118px; padding: 10px; border: 1px solid #dde4dd; border-radius: 8px; text-decoration: none; background: #fff; font-size: 12px; }
-.calendar-day:hover { background: #f1f6e9; color: #20392f; }
-.calendar-selected { border: 2px solid #355c3f; background: #e7f0dc; }
-.calendar-booked { color: #755313; }
-.calendar-free { color: #235533; }
-.calendar-maintenance { color: #835454; }
-.slot-free { background: #e7f0dc; color: #235533; }
-.slot-booked { color: #755313; font-size: 13px; }
-.slot-maintenance { color: #835454; }
-.slot-past, .slot-closed { color: #64736b; }
-.day-table { min-width: 680px; }
-button:disabled { opacity: .6; cursor: not-allowed; }
+.view-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 20px;
+}
+.calendar-scroll {
+    overflow-x: auto;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+    min-width: 770px;
+    gap: 6px;
+}
+.calendar-weekday {
+    text-align: center;
+    font-weight: 600;
+    padding: 8px;
+}
+.calendar-day {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 118px;
+    padding: 10px;
+    border: 1px solid #dde4dd;
+    border-radius: 8px;
+    text-decoration: none;
+    background: #fff;
+    font-size: 12px;
+}
+.calendar-day:hover {
+    background: #f1f6e9;
+    color: #20392f;
+}
+.calendar-selected {
+    border: 2px solid #355c3f;
+    background: #e7f0dc;
+}
+.calendar-booked {
+    color: #755313;
+}
+.calendar-free {
+    color: #235533;
+}
+.calendar-maintenance {
+    color: #835454;
+}
+.slot-free {
+    background: #e7f0dc;
+    color: #235533;
+}
+.slot-booked {
+    color: #755313;
+    font-size: 13px;
+}
+.slot-maintenance {
+    color: #835454;
+}
+.slot-past,
+.slot-closed {
+    color: #64736b;
+}
+.day-table {
+    min-width: 680px;
+}
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 @media (max-width: 800px) {
-    .calendar-day { min-height: 108px; }
+    .calendar-day {
+        min-height: 108px;
+    }
 }
 @media print {
-    .view-switch, .actions, .report-choices { display: none !important; }
-    .report-view[hidden] { display: none !important; }
+    .view-switch,
+    .actions,
+    .report-choices {
+        display: none !important;
+    }
+    .report-view[hidden] {
+        display: none !important;
+    }
 }
 
-.mobile-note { display: none; }
-@media (max-width: 800px) { .mobile-note { display: block; color: #64736b; font-size: 13px; } }
+.mobile-note {
+    display: none;
+}
+@media (max-width: 800px) {
+    .mobile-note {
+        display: block;
+        color: #64736b;
+        font-size: 13px;
+    }
+}
 
-.monthly-tag { display: inline-block; padding: 3px 6px; border-radius: 8px; background: #e7f0dc; color: #235533; font-size: 11px; white-space: nowrap; }
+.monthly-tag {
+    display: inline-block;
+    padding: 3px 6px;
+    border-radius: 8px;
+    background: #e7f0dc;
+    color: #235533;
+    font-size: 11px;
+    white-space: nowrap;
+}
 
-.phone-input { display: flex; align-items: center; }
-.phone-prefix { padding: 11px 12px; background: #e7f0dc; border: 1px solid #bdcbbb; border-right: 0; border-radius: 8px 0 0 8px; font-weight: 600; }
-#phone { min-width: 0; border-radius: 0 8px 8px 0; }
-.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
-.detail-item { margin: 0; overflow-wrap: anywhere; }
-.detail-label { display: block; color: #64736b; font-size: 13px; }
-@media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }
+.phone-input {
+    display: flex;
+    align-items: stretch;
+}
+.phone-prefix {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    height: 44px;
+    padding: 0 12px;
+    background: #e7f0dc;
+    border: 1px solid #bdcbbb;
+    border-right: 0;
+    border-radius: 8px 0 0 8px;
+    font-weight: 600;
+}
+#phone {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    margin: 0;
+    border-radius: 0 8px 8px 0;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 18px 0;
+}
+.detail-item {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.detail-label {
+    display: block;
+    color: #64736b;
+    font-size: 13px;
+}
+@media (max-width: 480px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

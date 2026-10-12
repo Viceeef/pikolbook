@@ -9,7 +9,9 @@ $start_year = filter_input(INPUT_GET, 'start_year', FILTER_VALIDATE_INT);
 $end_year = filter_input(INPUT_GET, 'end_year', FILTER_VALIDATE_INT);
 $start_month = $start_month !== false && $start_month >= 1 && $start_month <= 12 ? $start_month : 0;
 $end_month = $end_month !== false && $end_month >= 1 && $end_month <= 12 ? $end_month : 0;
-$available_years = rows('SELECT DISTINCT YEAR(booking_date) AS year FROM bookings ORDER BY year DESC');
+$available_years = rows(
+    'SELECT DISTINCT YEAR(booking_date) AS year FROM bookings ORDER BY year DESC',
+);
 $year_options = array_map('intval', array_column($available_years, 'year'));
 if (!in_array((int) date('Y'), $year_options, true)) {
     $year_options[] = (int) date('Y');
@@ -33,7 +35,9 @@ if ($start_month || $end_month || $start_year || $end_year) {
         $range_error = 'The From month/year must be earlier than or equal to the To month/year.';
     }
 }
-$records = rows('SELECT b.*,d.refunded_amount,d.refund_due FROM bookings b LEFT JOIN booking_details d ON d.booking_id=b.id ORDER BY b.booking_date');
+$records = rows(
+    'SELECT b.*,d.refunded_amount,d.refund_due FROM bookings b LEFT JOIN booking_details d ON d.booking_id=b.id ORDER BY b.booking_date',
+);
 $periodic_records = rows(
     'SELECT b.*,d.refunded_amount,d.refund_due FROM bookings b LEFT JOIN booking_details d ON d.booking_id=b.id WHERE (?=\'\' OR booking_date>=?) AND (?=\'\' OR booking_date<=?) ORDER BY booking_date',
     'ssss',
@@ -48,7 +52,13 @@ $courts = rows('SELECT * FROM courts ORDER BY name');
 $clients = rows('SELECT * FROM clients ORDER BY full_name');
 function report_totals($records)
 {
-    $result = ['total' => count($records), 'confirmed' => 0, 'cancelled' => 0, 'received' => 0, 'pending' => 0];
+    $result = [
+        'total' => count($records),
+        'confirmed' => 0,
+        'cancelled' => 0,
+        'received' => 0,
+        'pending' => 0,
+    ];
     foreach ($records as $b) {
         if ($b['status'] === 'confirmed') {
             $result['confirmed']++;
@@ -57,84 +67,237 @@ function report_totals($records)
             $result['cancelled']++;
         }
         $result['received'] += net_received($b);
-        $result['pending'] += max(0, (float) ($b['refund_due'] ?? 0) - (float) ($b['refunded_amount'] ?? 0));
+        $result['pending'] += max(
+            0,
+            (float) ($b['refund_due'] ?? 0) - (float) ($b['refunded_amount'] ?? 0),
+        );
     }
     return $result;
 }
 require_once 'layout.php';
 page_header($title, $page, $user);
 ?>
-<div class="heading"><div><h1>Reports & analytics</h1><p class="muted">Booking counts and recorded payments from the database.</p></div></div>
-<div class="report-choices" role="group" aria-label="Choose a report">
-    <button type="button" class="light" data-report-view="periodic-report" aria-pressed="true">Periodic reporting</button>
-    <button type="button" class="light" data-report-view="resource-report" aria-pressed="false">Bookings per resource</button>
-    <button type="button" class="light" data-report-view="client-report" aria-pressed="false">Bookings per client</button>
+<div class="heading">
+    <div>
+        <h1>Reports & analytics</h1>
+        <p class="muted">Booking counts and recorded payments from the database.</p>
+    </div>
 </div>
-<form method="get" class="toolbar" id="report-filters">
-<div class="field" data-periodic-filter><label for="start-month-filter">From month</label><select id="start-month-filter" name="start_month"><option value="0">Any month</option><?php for (
-    $month = 1;
-    $month <= 12;
-    $month++
-): ?><option value="<?= $month ?>" <?= $start_month === $month
-    ? 'selected'
-    : '' ?>><?= e(date('F', mktime(0, 0, 0, $month, 1))) ?></option><?php endfor; ?></select></div>
-<div class="field" data-periodic-filter><label for="end-month-filter">To month</label><select id="end-month-filter" name="end_month"><option value="0">Any month</option><?php for (
-    $month = 1;
-    $month <= 12;
-    $month++
-): ?><option value="<?= $month ?>" <?= $end_month === $month
-    ? 'selected'
-    : '' ?>><?= e(date('F', mktime(0, 0, 0, $month, 1))) ?></option><?php endfor; ?></select></div>
-<div class="field" data-periodic-filter><label for="start-year-filter">From year</label><select id="start-year-filter" name="start_year"><option value="0">Any year</option><?php foreach (
-    $year_options
-    as $year_option
-): ?><option value="<?= $year_option ?>" <?= $start_year === $year_option
-    ? 'selected'
-    : '' ?>><?= $year_option ?></option><?php endforeach; ?></select></div>
-<div class="field" data-periodic-filter><label for="end-year-filter">To year</label><select id="end-year-filter" name="end_year"><option value="0">Any year</option><?php foreach (
-    $year_options
-    as $year_option
-): ?><option value="<?= $year_option ?>" <?= $end_year === $year_option
-    ? 'selected'
-    : '' ?>><?= $year_option ?></option><?php endforeach; ?></select></div>
-<div class="report-actions">
-<button type="submit" class="report-button" data-periodic-filter><?= action_icon('filter') ?>Filter</button>
-<div class="report-links"><a class="button light report-button" href="reports.php" data-periodic-filter><?= action_icon(
-    'clear',
-) ?>Clear all</a>
-<button type="button" class="light report-button" id="print-report">Print report</button>
+<div
+    class="report-choices"
+    role="group"
+    aria-label="Choose a report"
+>
+    <button
+        type="button"
+        class="light"
+        data-report-view="periodic-report"
+        aria-pressed="true"
+    >
+        Periodic reporting
+    </button>
+    <button
+        type="button"
+        class="light"
+        data-report-view="resource-report"
+        aria-pressed="false"
+    >
+        Bookings per resource
+    </button>
+    <button
+        type="button"
+        class="light"
+        data-report-view="client-report"
+        aria-pressed="false"
+    >
+        Bookings per client
+    </button>
 </div>
-</div>
+<form
+    method="get"
+    class="toolbar"
+    id="report-filters"
+>
+    <div
+        class="field"
+        data-periodic-filter
+    >
+        <label for="start-month-filter">From month</label>
+        <select
+            id="start-month-filter"
+            name="start_month"
+        >
+            <option value="0">Any month</option>
+            <?php for ($month = 1; $month <= 12; $month++): ?>
+                <option
+                    value="<?= $month ?>"
+                    <?= $start_month === $month ? 'selected' : '' ?>
+                >
+                    <?= e(date('F', mktime(0, 0, 0, $month, 1))) ?>
+                </option>
+            <?php endfor; ?>
+        </select>
+    </div>
+    <div
+        class="field"
+        data-periodic-filter
+    >
+        <label for="end-month-filter">To month</label>
+        <select
+            id="end-month-filter"
+            name="end_month"
+        >
+            <option value="0">Any month</option>
+            <?php for ($month = 1; $month <= 12; $month++): ?>
+                <option
+                    value="<?= $month ?>"
+                    <?= $end_month === $month ? 'selected' : '' ?>
+                >
+                    <?= e(date('F', mktime(0, 0, 0, $month, 1))) ?>
+                </option>
+            <?php endfor; ?>
+        </select>
+    </div>
+    <div
+        class="field"
+        data-periodic-filter
+    >
+        <label for="start-year-filter">From year</label>
+        <select
+            id="start-year-filter"
+            name="start_year"
+        >
+            <option value="0">Any year</option>
+            <?php foreach ($year_options as $year_option): ?>
+                <option
+                    value="<?= $year_option ?>"
+                    <?= $start_year === $year_option ? 'selected' : '' ?>
+                >
+                    <?= $year_option ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div
+        class="field"
+        data-periodic-filter
+    >
+        <label for="end-year-filter">To year</label>
+        <select
+            id="end-year-filter"
+            name="end_year"
+        >
+            <option value="0">Any year</option>
+            <?php foreach ($year_options as $year_option): ?>
+                <option
+                    value="<?= $year_option ?>"
+                    <?= $end_year === $year_option ? 'selected' : '' ?>
+                >
+                    <?= $year_option ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="report-actions">
+        <button
+            type="submit"
+            class="report-button"
+            data-periodic-filter
+        >
+            <?= action_icon('filter') ?>Filter
+        </button>
+        <div class="report-links">
+            <a
+                class="button light report-button"
+                href="reports.php"
+                data-periodic-filter
+            >
+                <?= action_icon('clear') ?>Clear all
+            </a>
+            <button
+                type="button"
+                class="light report-button"
+                id="print-report"
+            >
+                Print report
+            </button>
+        </div>
+    </div>
 </form>
-<section class="card report-view" id="periodic-report"><h2>Periodic reporting</h2>
-<?php if ($range_error): ?><p class="error" role="alert"><?= e($range_error) ?></p><?php endif; ?>
-<?php if (!$periodic_records): ?><p class="error error-notice" role="alert">No bookings match the selected month and year.</p><?php endif; ?>
-<?php foreach ($years as $year => $unused): ?>
-<details class="card" <?= (int) $year === (int) date('Y') ? 'open' : '' ?>><summary><?= e(
-    $year,
-) ?></summary><div class="table-wrap"><table><thead><tr><th>Month</th><th>Total bookings</th><th>Cancelled</th><th>Net received</th><th>Refund pending</th></tr></thead><tbody>
-<?php for ($month = 1; $month <= 12; $month++):
-
-    if (
-        ($start_bound && (string) $year === substr($start_bound, 0, 4) && $month < (int) substr($start_bound, 5, 2)) ||
-        ($end_bound && (string) $year === substr($end_bound, 0, 4) && $month > (int) substr($end_bound, 5, 2))
-    ) {
-        continue;
-    }
-
-    $prefix = sprintf('%04d-%02d', $year, $month);
-    $monthly = [];
-    foreach ($periodic_records as $b) {
-        if (strpos($b['booking_date'], $prefix) === 0) {
-            $monthly[] = $b;
-        }
-    }
-    $t = report_totals($monthly);
-    ?><tr><td><?= e(date('F', mktime(0, 0, 0, $month, 1, (int) $year))) ?></td><td><?= $t[
-    'total'
-] ?></td><td><?= $t['cancelled'] ?></td><td><?= e(money($t['received'])) ?></td><td><?= e(money($t['pending'])) ?></td></tr><?php
-endfor; ?>
-</tbody></table></div></details><?php endforeach; ?>
+<section
+    class="card report-view"
+    id="periodic-report"
+>
+    <h2>Periodic reporting</h2>
+    <?php if ($range_error): ?>
+        <p
+            class="error"
+            role="alert"
+        >
+            <?= e($range_error) ?>
+        </p>
+    <?php endif; ?>
+    <?php if (!$periodic_records): ?>
+        <p
+            class="error error-notice"
+            role="alert"
+        >
+            No bookings match the selected month and year.
+        </p>
+    <?php endif; ?>
+    <?php foreach ($years as $year => $unused): ?>
+        <details
+            class="card"
+            <?= (int) $year === (int) date('Y') ? 'open' : '' ?>
+        >
+            <summary><?= e($year) ?></summary>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Total bookings</th>
+                            <th>Cancelled</th>
+                            <th>Net received</th>
+                            <th>Refund pending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php for ($month = 1; $month <= 12; $month++):
+                        
+                                                    if (
+                                                        ($start_bound &&
+                                                            (string) $year === substr($start_bound, 0, 4) &&
+                                                            $month < (int) substr($start_bound, 5, 2)) ||
+                                                        ($end_bound &&
+                                                            (string) $year === substr($end_bound, 0, 4) &&
+                                                            $month > (int) substr($end_bound, 5, 2))
+                                                    ) {
+                                                        continue;
+                                                    }
+                                                    $prefix = sprintf('%04d-%02d', $year, $month);
+                                                    $monthly = [];
+                                                    foreach ($periodic_records as $b) {
+                                                        if (strpos($b['booking_date'], $prefix) === 0) {
+                                                            $monthly[] = $b;
+                                                        }
+                                                    }
+                                                    $t = report_totals($monthly);
+                                                    ?>
+                            <tr>
+                                <td><?= e(date('F', mktime(0, 0, 0, $month, 1, (int) $year))) ?></td>
+                                <td><?= $t['total'] ?></td>
+                                <td><?= $t['cancelled'] ?></td>
+                                <td><?= e(money($t['received'])) ?></td>
+                                <td><?= e(money($t['pending'])) ?></td>
+                            </tr>
+                        <?php
+                         endfor; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    <?php endforeach; ?>
 </section>
 <?php foreach (
     [
@@ -143,24 +306,71 @@ endfor; ?>
     ]
     as $group
 ): ?>
-<section class="card report-view" id="<?= e($group[4]) ?>" hidden><h2><?= e(
-    $group[0],
-) ?></h2><?php if (!$records): ?><p class="error error-notice" role="alert">No booking records are available.</p><?php elseif (!$group[1]): ?><p class="error" role="alert">No results available for this report.</p><?php else: ?><div class="table-wrap"><table><thead><tr><th>Name</th><th>Total bookings</th><th>Confirmed</th><th>Cancelled</th><th>Net received</th><th>Refund pending</th></tr></thead><tbody>
-<?php foreach ($group[1] as $item):
-
-    $matching = [];
-    foreach ($records as $b) {
-        if ((int) $b[$group[2]] === (int) $item['id']) {
-            $matching[] = $b;
-        }
-    }
-    $t = report_totals($matching);
-    ?><tr><td><?= e($item[$group[3]] . ($item['is_active'] ? '' : ' (archived)')) ?></td><td><?= $t[
-    'total'
-] ?></td><td><?= $t['confirmed'] ?></td><td><?= $t['cancelled'] ?></td><td><?= e(
-    money($t['received']),
-) ?></td><td><?= e(money($t['pending'])) ?></td></tr><?php
-endforeach; ?>
-</tbody></table></div><?php endif; ?></section><?php endforeach; ?>
-<p class="note" id="report-note">Net received is paid money minus refunds recorded as paid, grouped by booking date. Pending refunds are shown separately. Each monthly-block date is counted once.</p>
+    <section
+        class="card report-view"
+        id="<?= e($group[4]) ?>"
+        hidden
+    >
+        <h2><?= e($group[0]) ?></h2>
+        <?php if (!$records): ?>
+            <p
+                class="error error-notice"
+                role="alert"
+            >
+                No booking records are available.
+            </p>
+        <?php elseif (!$group[1]): ?>
+            <p
+                class="error"
+                role="alert"
+            >
+                No results available for this report.
+            </p>
+        <?php else: ?>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Total bookings</th>
+                            <th>Confirmed</th>
+                            <th>Cancelled</th>
+                            <th>Net received</th>
+                            <th>Refund pending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($group[1] as $item):
+                        
+                                                    $matching = [];
+                                                    foreach ($records as $b) {
+                                                        if ((int) $b[$group[2]] === (int) $item['id']) {
+                                                            $matching[] = $b;
+                                                        }
+                                                    }
+                                                    $t = report_totals($matching);
+                                                    ?>
+                            <tr>
+                                <td><?= e($item[$group[3]] . ($item['is_active'] ? '' : ' (archived)')) ?></td>
+                                <td><?= $t['total'] ?></td>
+                                <td><?= $t['confirmed'] ?></td>
+                                <td><?= $t['cancelled'] ?></td>
+                                <td><?= e(money($t['received'])) ?></td>
+                                <td><?= e(money($t['pending'])) ?></td>
+                            </tr>
+                        <?php
+                         endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
+<?php endforeach; ?>
+<p
+    class="note"
+    id="report-note"
+>
+    Net received is paid money minus refunds recorded as paid, grouped by booking date. Pending
+    refunds are shown separately. Each monthly-block date is counted once.
+</p>
 <?php page_footer(); ?>

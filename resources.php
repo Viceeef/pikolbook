@@ -129,31 +129,73 @@ if (!empty($_GET['edit'])) {
 require_once 'layout.php';
 page_header($title, $page, $user);
 ?>
-<div class="heading"><div><h1>Court management</h1><p class="muted">Courts, opening hours and maintenance.</p></div><?php if (
-    $user['role'] === 'admin'
-): ?><button data-open="resource-dialog">+ New resource</button><?php endif; ?></div>
-<div class="field"><label for="table-search">Search courts</label><input id="table-search" type="search" data-search="records"></div>
-<section class="card"><div class="table-wrap"><table id="records"><thead><tr><th>ID</th><th>Court</th><th>Description</th><th>Rate</th><th>Hours</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-<?php foreach ($courts as $court): ?><tr><td><?= (int) $court['id'] ?></td><td><?= e(
-    $court['name'],
-) ?></td><td><?= e($court['description']) ?></td><td><?= e(
-    money($court['hourly_rate']),
-) ?></td><td>9 AM – midnight</td><td><?= !$court['is_active']
-    ? 'Archived'
-    : ($court['maintenance']
-        ? 'Maintenance'
-        : 'Available') ?></td><td>
-<?php if (
-    $user['role'] === 'admin'
-): ?><div class="row-actions"><a class="button light" href="resources.php?edit=<?= (int) $court[
-    'id'
-] ?>"><?= action_icon('edit') ?>Edit</a><?php delete_button(
-    'resources.php',
-    $court['id'],
-    'Delete this court? Referenced courts are archived. Cancel or reschedule upcoming bookings first.',
-); ?></div><?php else: ?>View only<?php endif; ?>
-</td></tr><?php endforeach; ?>
-</tbody></table></div></section>
+<div class="heading">
+    <div>
+        <h1>Court management</h1>
+        <p class="muted">Courts, opening hours and maintenance.</p>
+    </div>
+    <?php if ($user['role'] === 'admin'): ?>
+        <button data-open="resource-dialog">+ New resource</button>
+    <?php endif; ?>
+</div>
+<div class="field">
+    <label for="table-search">Search courts</label>
+    <input
+        id="table-search"
+        type="search"
+        data-search="records"
+    />
+</div>
+<section class="card">
+    <div class="table-wrap">
+        <table id="records">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Court</th>
+                    <th>Description</th>
+                    <th>Rate</th>
+                    <th>Hours</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($courts as $court): ?>
+                    <tr>
+                        <td><?= (int) $court['id'] ?></td>
+                        <td><?= e($court['name']) ?></td>
+                        <td><?= e($court['description']) ?></td>
+                        <td><?= e(money($court['hourly_rate'])) ?></td>
+                        <td>9 AM – midnight</td>
+                        <td><?= !$court['is_active'] ? 'Archived' : ($court['maintenance'] ? 'Maintenance' : 'Available') ?></td>
+                        <td>
+                            <?php if ($user['role'] === 'admin'): ?>
+                                <div class="row-actions">
+                                    <a
+                                        class="button light"
+                                        href="resources.php?edit=<?= (int) $court['id'] ?>"
+                                    >
+                                        <?= action_icon('edit') ?>Edit
+                                    </a>
+                                    <?php
+                                    delete_button(
+                                        'resources.php',
+                                        $court['id'],
+                                        'Delete this court? Referenced courts are archived. Cancel or reschedule upcoming bookings first.',
+                                    );
+                                    ?>
+                                </div>
+                            <?php else: ?>
+                                View only
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
 <?php
 if ($user['role'] === 'admin'):
     $maintenance = $edit
@@ -163,61 +205,138 @@ if ($user['role'] === 'admin'):
             [$edit['id']],
         )
         : null; ?>
-<dialog id="resource-dialog" <?= $edit || isset($_GET['new']) ? 'data-auto-open' : '' ?>>
-<div class="heading"><h2><?= $edit
-    ? 'Edit resource'
-    : 'New resource' ?></h2><button type="button" class="light" data-close="resource-dialog">Close</button></div>
-<form method="post" action="resources.php"><?php csrf_field(); ?><input type="hidden" name="id" value="<?= (int) ($edit[
-    'id'
-] ?? 0) ?>">
-<?php if (!empty($_SESSION['form_error'])): ?><p class="error" role="alert"><?= e($_SESSION['form_error']) ?></p><?php unset($_SESSION['form_error']); endif; ?>
+    <dialog
+        id="resource-dialog"
+        <?= $edit || isset($_GET['new']) ? 'data-auto-open' : '' ?>
+    >
+        <div class="heading">
+            <h2><?= $edit ? 'Edit resource' : 'New resource' ?></h2>
+            <button
+                type="button"
+                class="light"
+                data-close="resource-dialog"
+            >
+                Close
+            </button>
+        </div>
+        <form
+            method="post"
+            action="resources.php"
+        >
+            <?php
+            csrf_field();
+            ?>
+            <input
+                type="hidden"
+                name="id"
+                value="<?= (int) ($edit['id'] ?? 0)
+            ?>"
+            />
+            <?php if (!empty($_SESSION['form_error'])): ?>
+                <p
+                    class="error"
+                    role="alert"
+                >
+                    <?= e($_SESSION['form_error']) ?>
+                </p>
+            <?php
+            unset($_SESSION['form_error']);endif; ?>
+            <?php
+            $maintenance_enabled = fv('maintenance', $maintenance ? 1 : 0) == 1;
+            field('Court name', 'name', fv('name', $edit['name'] ?? ''));
+            field(
+                'Description',
+                'description',
+                fv('description', $edit['description'] ?? ''),
+                'text',
+                true,
+                1000,
+            );
+            ?>
+            <div class="field">
+                <label for="maintenance">Master override<?= required_mark() ?></label>
+                <select
+                    name="maintenance"
+                    id="maintenance"
+                    required
+                >
+                    <option value="0">Available</option>
+                    <option
+                        value="1"
+                        <?= fv('maintenance', $maintenance ? 1 : 0) == 1 ? 'selected' : '' ?>
+                    >
+                        Under maintenance
+                    </option>
+                </select>
+            </div>
+            <div
+                id="maintenance-period"
+                class="form-grid"
+                <?= $maintenance_enabled ? '' : 'hidden' ?>
+            >
+                <?php
+                $maintenance_start_value = fv(
+                    'maintenance_start',
+                    $maintenance ? date('Y-m-d\TH:i', strtotime($maintenance['start_at'])) : '',
+                );
+                $maintenance_end_value = fv(
+                    'maintenance_end',
+                    $maintenance ? date('Y-m-d\TH:i', strtotime($maintenance['end_at'])) : '',
+                );
+                ?>
+                <div class="field">
+                    <label for="maintenance_start">Maintenance starts<?= required_mark() ?></label>
+                    <input
+                        type="datetime-local"
+                        id="maintenance_start"
+                        name="maintenance_start"
+                        value="<?= e($maintenance_start_value) ?>"
+                        <?= $maintenance_enabled ? 'required' : '' ?>
+                    />
+                </div>
+                <div class="field">
+                    <label for="maintenance_end">Maintenance ends<?= required_mark() ?></label>
+                    <input
+                        type="datetime-local"
+                        id="maintenance_end"
+                        name="maintenance_end"
+                        value="<?= e($maintenance_end_value) ?>"
+                        <?= $maintenance_enabled ? 'required' : '' ?>
+                    />
+                </div>
+            </div>
+            <div class="field">
+                <label for="is_active">Record status<?= required_mark() ?></label>
+                <select
+                    name="is_active"
+                    id="is_active"
+                    required
+                >
+                    <option value="1">Active</option>
+                    <option
+                        value="0"
+                        <?= fv('is_active', $edit['is_active'] ?? 1) == 0 ? 'selected' : '' ?>
+                    >
+                        Archived
+                    </option>
+                </select>
+            </div>
+            <p>₱300 per hour · 9 AM to midnight</p>
+            <p class="note">
+                Maintenance blocks new bookings. Cancel or reschedule affected bookings before blocking
+                this court.
+            </p>
+            <div class="actions">
+                <button
+                    type="button"
+                    class="light"
+                    data-close="resource-dialog"
+                >
+                    <?= action_icon('cancel') ?>Cancel
+                </button>
+                <button>Save resource</button>
+            </div>
+        </form>
+    </dialog>
 <?php
-$maintenance_enabled = fv('maintenance', $maintenance ? 1 : 0) == 1;
-field('Court name', 'name', fv('name', $edit['name'] ?? ''));
-field('Description', 'description', fv('description', $edit['description'] ?? ''), 'text', true, 1000);
-?>
-<div class="field"><label for="maintenance">Master override<?= required_mark() ?></label><select name="maintenance" id="maintenance" required><option value="0">Available</option><option value="1" <?= fv(
-    'maintenance',
-    $maintenance ? 1 : 0,
-) == 1
-    ? 'selected'
-    : '' ?>>Under maintenance</option></select></div>
-<div id="maintenance-period" class="form-grid" <?= $maintenance_enabled ? '' : 'hidden' ?>>
-<?php
-$maintenance_start_value = fv(
-    'maintenance_start',
-    $maintenance ? date('Y-m-d\TH:i', strtotime($maintenance['start_at'])) : '',
-);
-$maintenance_end_value = fv(
-    'maintenance_end',
-    $maintenance ? date('Y-m-d\TH:i', strtotime($maintenance['end_at'])) : '',
-);
-?>
-    <div class="field">
-        <label for="maintenance_start">Maintenance starts<?= required_mark() ?></label>
-        <input type="datetime-local" id="maintenance_start" name="maintenance_start" value="<?= e(
-            $maintenance_start_value,
-        ) ?>" <?= $maintenance_enabled ? 'required' : '' ?>>
-    </div>
-    <div class="field">
-        <label for="maintenance_end">Maintenance ends<?= required_mark() ?></label>
-        <input type="datetime-local" id="maintenance_end" name="maintenance_end" value="<?= e(
-            $maintenance_end_value,
-        ) ?>" <?= $maintenance_enabled ? 'required' : '' ?>>
-    </div>
-</div>
-<div class="field"><label for="is_active">Record status<?= required_mark() ?></label><select name="is_active" id="is_active" required><option value="1">Active</option><option value="0" <?= fv(
-    'is_active',
-    $edit['is_active'] ?? 1,
-) == 0
-    ? 'selected'
-    : '' ?>>Archived</option></select></div>
-<p>₱300 per hour · 9 AM to midnight</p><p class="note">Maintenance blocks new bookings. Cancel or reschedule affected bookings before blocking this court.</p>
-<div class="actions"><button type="button" class="light" data-close="resource-dialog"><?= action_icon(
-    'cancel',
-) ?>Cancel</button><button>Save resource</button></div></form></dialog>
-<?php
-endif;
-page_footer();
-
-?>
+endif; page_footer(); ?>

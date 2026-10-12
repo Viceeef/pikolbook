@@ -70,7 +70,8 @@ document.querySelectorAll('input[data-search]').forEach(function (input) {
     const empty = document.createElement('tr');
     empty.className = 'filter-empty error';
     empty.hidden = true;
-    empty.innerHTML = '<td colspan="' + table.rows[0].cells.length + '">No matching results found.</td>';
+    empty.innerHTML =
+        '<td colspan="' + table.rows[0].cells.length + '">No matching results found.</td>';
     body.appendChild(empty);
     function filterTable() {
         const term = input.value.trim().toLowerCase();
@@ -234,12 +235,18 @@ if (bookingForm) {
     const bookingDialog = document.getElementById('booking-dialog');
     const errorDialog = document.getElementById('booking-error-dialog');
     let invalidInput = null;
-    bookingForm.addEventListener('invalid', function (event) {
-        event.preventDefault();
-        invalidInput = invalidInput || event.target;
-        document.getElementById('booking-error-text').textContent = 'Please complete the required fields and check your entries. ' + invalidInput.validationMessage;
-        if (!errorDialog.open) errorDialog.showModal();
-    }, true);
+    bookingForm.addEventListener(
+        'invalid',
+        function (event) {
+            event.preventDefault();
+            invalidInput = invalidInput || event.target;
+            document.getElementById('booking-error-text').textContent =
+                'Please complete the required fields and check your entries. ' +
+                invalidInput.validationMessage;
+            if (!errorDialog.open) errorDialog.showModal();
+        },
+        true,
+    );
     document.getElementById('retry-booking').addEventListener('click', function () {
         errorDialog.close();
         if (!bookingDialog.open) bookingDialog.showModal();
@@ -282,38 +289,62 @@ if (bookingForm) {
                 day.setDate(day.getDate() + 7);
             }
         }
-        const sameSchedule = bookingForm.dataset.edit === '1' &&
-            court.value === bookingForm.dataset.originalCourt && dateInput.value === bookingForm.dataset.originalDate &&
-            start.value === bookingForm.dataset.originalHour && duration.value === bookingForm.dataset.originalDuration;
+        const sameSchedule =
+            bookingForm.dataset.edit === '1' &&
+            court.value === bookingForm.dataset.originalCourt &&
+            dateInput.value === bookingForm.dataset.originalDate &&
+            start.value === bookingForm.dataset.originalHour &&
+            duration.value === bookingForm.dataset.originalDuration;
         const perDate = sameSchedule ? Number(bookingForm.dataset.total) : hours * rate;
         const total = perDate * dates.length;
-        summary.textContent = hourText(startHour) + ' – ' + hourText(startHour + hours) + ' · ' + hours +
-            (hours === 1 ? ' hour per date' : ' hours per date') + ' · Total: ₱' + total.toFixed(2);
-        repeatSummary.textContent = repeat && repeat.value === 'monthly' ?
-            dates.length + ' dates: ' + dates.join(', ') + '. ₱' + perDate.toFixed(2) + ' per date. All dates must be available.' : '';
+        summary.textContent =
+            hourText(startHour) +
+            ' – ' +
+            hourText(startHour + hours) +
+            ' · ' +
+            hours +
+            (hours === 1 ? ' hour per date' : ' hours per date') +
+            ' · Total: ₱' +
+            total.toFixed(2);
+        repeatSummary.textContent =
+            repeat && repeat.value === 'monthly'
+                ? dates.length +
+                  ' dates: ' +
+                  dates.join(', ') +
+                  '. ₱' +
+                  perDate.toFixed(2) +
+                  ' per date. All dates must be available.'
+                : '';
         if (changed) {
             received.value = total.toFixed(2);
             verified.checked = false;
         }
     }
     [start, duration, court, dateInput, repeat].filter(Boolean).forEach(function (input) {
-        input.addEventListener('change', function () { updateSummary(true); });
+        input.addEventListener('change', function () {
+            updateSummary(true);
+        });
     });
     const paymentStatus = document.getElementById('payment_status');
     function paymentFields() {
         const unpaid = paymentStatus.value === 'unpaid';
-        ['payment_method','payment_reference','paid_at'].forEach(function (id) {
+        ['payment_method', 'payment_reference', 'paid_at'].forEach(function (id) {
             const input = document.getElementById(id);
             input.required = !unpaid;
             input.disabled = unpaid;
         });
         verified.required = !unpaid;
-        if (unpaid) { received.value = '0.00'; verified.checked = false; }
+        if (unpaid) {
+            received.value = '0.00';
+            verified.checked = false;
+        }
     }
     paymentStatus.addEventListener('change', paymentFields);
     paymentFields();
     if (bookingForm.dataset.sharedPayment === '1') {
-        ['amount_paid','payment_reference','paid_at'].forEach(function (id) { document.getElementById(id).readOnly = true; });
+        ['amount_paid', 'payment_reference', 'paid_at'].forEach(function (id) {
+            document.getElementById(id).readOnly = true;
+        });
     }
     document.querySelectorAll('[data-slot-date]').forEach(function (button) {
         button.addEventListener('click', function () {
@@ -333,7 +364,7 @@ if (bookingForm) {
     updateSummary(false);
 }
 
-/* Local mobile input: +63 stays visible; only the ten national digits are saved. */
+/* The field shows national digits beside +63; PHP stores the full international number. */
 const phoneInput = document.getElementById('phone');
 if (phoneInput) {
     function localPhone(value) {
@@ -347,7 +378,9 @@ if (phoneInput) {
         const number = localPhone(phoneInput.value);
         const valid = number === '' || /^9[0-9]{9}$/.test(number);
         if (/^9[0-9]{9}$/.test(number)) phoneInput.value = number;
-        phoneInput.setCustomValidity(valid ? '' : 'Enter 10 digits starting with 9. Letters are not allowed.');
+        phoneInput.setCustomValidity(
+            valid ? '' : 'Enter 10 digits starting with 9. Letters are not allowed.',
+        );
         return number;
     }
     phoneInput.addEventListener('input', validatePhone);
