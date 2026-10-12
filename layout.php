@@ -21,9 +21,8 @@ function page_header($title, $page, $user)
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?> | Pikolbook</title>
-    <!-- The file's update time tells the browser when to reload CSS and JavaScript. -->
-    <link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
-    <script src="script.js?v=<?= filemtime(__DIR__ . '/script.js') ?>" defer></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
 <div class="shell">
@@ -378,6 +377,12 @@ function booking_calendar($courts, $bookings)
     </form>
     <div class="heading"><a class="button light" aria-label="Previous month" href="bookings.php?view=calendar&amp;month=<?= e($previous) ?>&amp;court_id=<?= $court_id ?>">Previous</a><h2><?= e(date('F Y',strtotime($first))) ?></h2><a class="button light" aria-label="Next month" href="bookings.php?view=calendar&amp;month=<?= e($next) ?>&amp;court_id=<?= $court_id ?>">Next</a></div>
     <p class="note">Select a day to see each court's time slots. Available hours exclude past times and maintenance. Cancelled bookings release their slots.</p>
+    <div class="calendar-legend" aria-label="Calendar legend">
+        <span><i class="legend-dot legend-booked"></i>Has bookings</span>
+        <span><i class="legend-dot legend-available"></i>Availability</span>
+        <span><i class="legend-dot legend-maintenance"></i>Maintenance</span>
+        <span><i class="legend-bar"></i>Booked-hour share</span>
+    </div>
     <p class="mobile-note">Swipe sideways to see the full week and all courts.</p>
     <div class="calendar-scroll"><div class="calendar-grid">
     <?php foreach (['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $weekday): ?><div class="calendar-weekday"><?= $weekday ?></div><?php endforeach; ?>
@@ -393,9 +398,14 @@ function booking_calendar($courts, $bookings)
                 if ($slot['state'] === 'maintenance') $maintenance++;
             }
         }
+        $tracked = $free + $occupied + $maintenance;
+        $load = $tracked ? (int) round($occupied / $tracked * 100) : 0;
+        $day_class = $occupied ? 'calendar-day--booked' : ($free ? 'calendar-day--open' : 'calendar-day--full');
         ?>
-        <a class="calendar-day <?= $day_date === $selected ? 'calendar-selected' : '' ?>" href="bookings.php?view=calendar&amp;month=<?= e($month) ?>&amp;day=<?= e($day_date) ?>&amp;court_id=<?= $court_id ?>#day-schedule" <?= $day_date === date('Y-m-d') ? 'aria-current="date"' : '' ?>>
-            <strong><?= $day ?></strong><span class="calendar-booked"><?= $occupied ?> booked hrs</span><span class="calendar-free"><?= $free ?> available hrs</span><?php if ($maintenance): ?><span class="calendar-maintenance"><?= $maintenance ?> maintenance hrs</span><?php endif; ?>
+        <a class="calendar-day <?= $day_class ?> <?= $day_date === $selected ? 'calendar-selected' : '' ?>" href="bookings.php?view=calendar&amp;month=<?= e($month) ?>&amp;day=<?= e($day_date) ?>&amp;court_id=<?= $court_id ?>#day-schedule" <?= $day_date === date('Y-m-d') ? 'aria-current="date"' : '' ?>>
+            <span class="calendar-date"><strong><?= $day ?></strong><span><?= e(date('D', strtotime($day_date))) ?></span><?php if ($day_date === date('Y-m-d')): ?><b>Today</b><?php endif; ?></span>
+            <span class="calendar-metrics"><span class="calendar-booked"><i class="calendar-metric-dot"></i><?= $occupied ?> booked</span><span class="calendar-free"><i class="calendar-metric-dot"></i><?= $free ?> available</span><?php if ($maintenance): ?><span class="calendar-maintenance"><i class="calendar-metric-dot"></i><?= $maintenance ?> maintenance</span><?php endif; ?></span>
+            <span class="calendar-load" role="img" aria-label="<?= $occupied ?> booked hours out of <?= $tracked ?> tracked hours" title="<?= $load ?>% of tracked hours booked"><span style="width: <?= $load ?>%"></span></span>
         </a>
     <?php endfor; ?>
     </div></div>
