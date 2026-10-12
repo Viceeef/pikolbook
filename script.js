@@ -39,8 +39,8 @@ document.querySelectorAll('.password-toggle').forEach(function (button) {
         input.type = showing ? 'text' : 'password';
         button.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
         button.setAttribute('aria-pressed', String(showing));
-        button.querySelector('.icon-eye').hidden = !showing;
-        button.querySelector('.icon-eye-off').hidden = showing;
+        button.querySelector('.icon-eye').toggleAttribute('hidden', !showing);
+        button.querySelector('.icon-eye-off').toggleAttribute('hidden', showing);
     });
 });
 document.querySelectorAll('form[data-confirm]').forEach(function (form) {
