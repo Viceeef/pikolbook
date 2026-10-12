@@ -21,6 +21,7 @@ function page_header($title, $page, $user)
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?> | Pikolbook</title>
+    <link rel="icon" type="image/png" href="img/login_logo.png">
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
