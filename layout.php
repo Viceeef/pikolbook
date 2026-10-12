@@ -931,17 +931,31 @@ function booking_calendar($courts, $bookings)
                         }
                     }
                 }
+                $capacity = count($shown) * 15;
+                $unavailable = max(0, $capacity - $free - $occupied - $maintenance);
+                $today = $day_date === date('Y-m-d');
                 ?>
                     <a
-                        class="calendar-day <?= $day_date === $selected ? 'calendar-selected' : '' ?>"
+                        class="calendar-day <?= $day_date === $selected ? 'calendar-selected' : '' ?> <?= $today ? 'calendar-today' : '' ?>"
                         href="bookings.php?view=calendar&amp;month=<?= e($month) ?>&amp;day=<?= e($day_date) ?>&amp;court_id=<?= $court_id ?>#day-schedule"
-                        <?= $day_date === date('Y-m-d') ? 'aria-current="date"' : '' ?>
+                        <?= $today ? 'aria-current="date"' : '' ?>
                     >
-                        <strong><?= $day ?></strong>
-                        <span class="calendar-booked"><?= $occupied ?> booked hrs</span>
-                        <span class="calendar-free"><?= $free ?> available hrs</span>
+                        <span class="calendar-day-heading">
+                            <strong><?= $day ?></strong>
+                        <?php if ($today): ?>
+                                <span class="calendar-today-tag">Today</span>
+                        <?php endif; ?>
+                        </span>
+                        <span class="calendar-capacity" aria-hidden="true">
+                            <span class="calendar-capacity-free" style="width: <?= $capacity ? ($free / $capacity) * 100 : 0 ?>%"></span>
+                            <span class="calendar-capacity-booked" style="width: <?= $capacity ? ($occupied / $capacity) * 100 : 0 ?>%"></span>
+                            <span class="calendar-capacity-maintenance" style="width: <?= $capacity ? ($maintenance / $capacity) * 100 : 0 ?>%"></span>
+                            <span class="calendar-capacity-unavailable" style="width: <?= $capacity ? ($unavailable / $capacity) * 100 : 0 ?>%"></span>
+                        </span>
+                        <span class="calendar-booked"><i></i><?= $occupied ?> booked hrs</span>
+                        <span class="calendar-free"><i></i><?= $free ?> available hrs</span>
                     <?php if ($maintenance): ?>
-                            <span class="calendar-maintenance"><?= $maintenance ?> maintenance hrs</span>
+                            <span class="calendar-maintenance"><i></i><?= $maintenance ?> maintenance hrs</span>
                     <?php endif; ?>
                     </a>
             <?php
